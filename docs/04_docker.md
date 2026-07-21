@@ -70,23 +70,10 @@ docker compose up -d
 
 ---
 
+> [!IMPORTANT]
 > **まとめ**
 >
 > - Dockerはアプリケーションと環境をまるごとパッケージ化するツール
 > - 「自分のPCでは動くのに」問題を解決する
 > - 近年の開発現場ではほぼ必須のツール
 > - `docker compose up -d` で今日の環境が全部立ち上がる
-
----
-
-## コラム：Apple Containerが登場した
-
-2026年6月、AppleがmacOS向けのコンテナツール「container」をv1.0.0として正式リリースしました。WWDC25で発表されたSwift製のオープンソースツールで、GitHubには42,000以上のスターが集まっています。
-
-Dockerとの最大の違いはアーキテクチャです。Dockerがすべてのコンテナを1つの共有Linux VM上で動かすのに対し、Apple Containerはコンテナ1つごとに独立した軽量VMを起動します。これによりコンテナ間のセキュリティ分離が強く、起動も高速です。また無料で使えるため、有料になる規模のチームにとってDocker Desktopの代替として魅力的です。
-
-ただし現時点ではDocker Composeに相当する機能がなく、複数コンテナを一括管理する用途には向いていません。Apple Silicon専用でmacOS 26が必須という制約もあります。
-
-今すぐDockerを置き換えるものではありませんが、コンテナ技術の選択肢が広がりつつあることは知っておいて損はないでしょう。
-
-- [apple/container | GitHub](https://github.com/apple/container)
