@@ -1,0 +1,44 @@
+<svg viewBox="0 0 520 630" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <defs>
+    <marker id="arrow1" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#5a3e1b"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="520" height="630" fill="#fffde8"/>
+
+  <!-- box: フロントエンド -->
+  <rect x="120" y="20" width="280" height="50" rx="6" fill="#ffffff" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="260" y="52" text-anchor="middle" font-size="16" fill="#2a1a00">フロントエンド</text>
+
+  <line x1="260" y1="70" x2="260" y2="132" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow1)"/>
+  <text x="270" y="108" text-anchor="start" font-size="13" fill="#7a5a2a">「攻撃して！」とリクエストを送る</text>
+
+  <!-- box: API（窓口） -->
+  <rect x="120" y="140" width="280" height="50" rx="6" fill="#f0d080" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="260" y="172" text-anchor="middle" font-size="16" fill="#2a1a00">API（窓口）</text>
+
+  <line x1="260" y1="190" x2="260" y2="252" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow1)"/>
+  <text x="270" y="228" text-anchor="start" font-size="13" fill="#7a5a2a">リクエストを受け取る</text>
+
+  <!-- box: バックエンド -->
+  <rect x="120" y="260" width="280" height="50" rx="6" fill="#ffffff" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="260" y="292" text-anchor="middle" font-size="16" fill="#2a1a00">バックエンド</text>
+
+  <line x1="260" y1="310" x2="260" y2="372" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow1)"/>
+  <text x="270" y="348" text-anchor="start" font-size="13" fill="#7a5a2a">攻撃力を計算して、敵のHPを更新する</text>
+
+  <!-- box: API（窓口） -->
+  <rect x="120" y="380" width="280" height="50" rx="6" fill="#f0d080" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="260" y="412" text-anchor="middle" font-size="16" fill="#2a1a00">API（窓口）</text>
+
+  <line x1="260" y1="430" x2="260" y2="492" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow1)"/>
+  <text x="270" y="468" text-anchor="start" font-size="13" fill="#7a5a2a">「攻撃成功！敵のHPが10減った」とレスポンスを返す</text>
+
+  <!-- box: フロントエンド -->
+  <rect x="120" y="500" width="280" height="50" rx="6" fill="#ffffff" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="260" y="532" text-anchor="middle" font-size="16" fill="#2a1a00">フロントエンド</text>
+
+  <line x1="260" y1="550" x2="260" y2="600" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow1)"/>
+  <text x="270" y="588" text-anchor="start" font-size="13" fill="#7a5a2a">結果を画面に表示する</text>
+</svg>

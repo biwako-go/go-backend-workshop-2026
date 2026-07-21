@@ -1,0 +1,29 @@
+<svg viewBox="0 0 560 330" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <defs>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#5a3e1b"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="560" height="330" fill="#fffde8"/>
+
+  <!-- box: ブラウザ（フロントエンド） -->
+  <rect x="120" y="20" width="320" height="50" rx="6" fill="#ffffff" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="280" y="52" text-anchor="middle" font-size="16" fill="#2a1a00">ブラウザ（フロントエンド）</text>
+
+  <line x1="280" y1="70" x2="280" y2="132" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow2)"/>
+  <text x="280" y="98" text-anchor="middle" font-size="13" fill="#7a5a2a">リクエスト</text>
+  <text x="280" y="116" text-anchor="middle" font-size="12" fill="#7a5a2a">（「GET /hero をお願いします」）</text>
+
+  <!-- box: サーバー（バックエンド） -->
+  <rect x="120" y="140" width="320" height="50" rx="6" fill="#f0d080" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="280" y="172" text-anchor="middle" font-size="16" fill="#2a1a00">サーバー（バックエンド）</text>
+
+  <line x1="280" y1="190" x2="280" y2="252" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow2)"/>
+  <text x="280" y="218" text-anchor="middle" font-size="13" fill="#7a5a2a">レスポンス</text>
+  <text x="280" y="236" text-anchor="middle" font-size="12" fill="#7a5a2a">（「{ "name": "勇者", "hp": 100 ... }」）</text>
+
+  <!-- box: ブラウザ（フロントエンド） -->
+  <rect x="120" y="260" width="320" height="50" rx="6" fill="#ffffff" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="280" y="292" text-anchor="middle" font-size="16" fill="#2a1a00">ブラウザ（フロントエンド）</text>
+</svg>

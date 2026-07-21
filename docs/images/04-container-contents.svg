@@ -1,0 +1,29 @@
+<svg viewBox="0 0 520 320" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <defs>
+    <marker id="arrow4a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#5a3e1b"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="520" height="320" fill="#fffde8"/>
+
+  <text x="260" y="30" text-anchor="middle" font-size="16" fill="#2a1a00" font-weight="bold">コンテナ</text>
+
+  <rect x="100" y="45" width="320" height="150" rx="6" fill="#ffffff" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="260" y="80" text-anchor="middle" font-size="14" fill="#2a1a00">アプリケーション</text>
+  <text x="260" y="110" text-anchor="middle" font-size="14" fill="#2a1a00">ライブラリ</text>
+  <text x="260" y="140" text-anchor="middle" font-size="14" fill="#2a1a00">設定ファイル</text>
+  <text x="260" y="170" text-anchor="middle" font-size="14" fill="#2a1a00">OS（最小限）</text>
+
+  <line x1="260" y1="195" x2="260" y2="242" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow4a)"/>
+  <text x="270" y="222" text-anchor="start" font-size="13" fill="#7a5a2a">どこでも同じように動く</text>
+
+  <rect x="60" y="252" width="110" height="40" rx="20" fill="#f0d080" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="115" y="277" text-anchor="middle" font-size="14" fill="#2a1a00">Mac</text>
+
+  <rect x="205" y="252" width="110" height="40" rx="20" fill="#f0d080" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="260" y="277" text-anchor="middle" font-size="14" fill="#2a1a00">Windows</text>
+
+  <rect x="350" y="252" width="110" height="40" rx="20" fill="#f0d080" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="405" y="277" text-anchor="middle" font-size="14" fill="#2a1a00">Linux</text>
+</svg>

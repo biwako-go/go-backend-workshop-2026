@@ -1,0 +1,31 @@
+<svg viewBox="0 0 640 330" xmlns="http://www.w3.org/2000/svg" font-family="sans-serif">
+  <defs>
+    <marker id="arrow3" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#5a3e1b"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="640" height="330" fill="#fffde8"/>
+
+  <!-- box: フロントエンド -->
+  <rect x="60" y="20" width="260" height="50" rx="6" fill="#ffffff" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="190" y="52" text-anchor="middle" font-size="16" fill="#2a1a00">フロントエンド</text>
+
+  <line x1="190" y1="70" x2="190" y2="132" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow3)"/>
+  <text x="200" y="108" text-anchor="start" font-size="13" fill="#7a5a2a">リクエスト</text>
+
+  <!-- box: バックエンド -->
+  <rect x="60" y="140" width="260" height="50" rx="6" fill="#ffffff" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="190" y="172" text-anchor="middle" font-size="16" fill="#2a1a00">バックエンド</text>
+
+  <line x1="190" y1="190" x2="190" y2="252" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow3)"/>
+  <text x="200" y="228" text-anchor="start" font-size="13" fill="#7a5a2a">データを読み書きする</text>
+
+  <!-- box: データベース（DB） -->
+  <rect x="60" y="260" width="260" height="50" rx="6" fill="#f0d080" stroke="#5a3e1b" stroke-width="2"/>
+  <text x="190" y="292" text-anchor="middle" font-size="16" fill="#2a1a00">データベース（DB）</text>
+
+  <!-- annotation pointing into DB box -->
+  <line x1="610" y1="285" x2="330" y2="285" stroke="#5a3e1b" stroke-width="2" marker-end="url(#arrow3)"/>
+  <text x="605" y="270" text-anchor="end" font-size="12" fill="#7a5a2a">ここにデータが永続的に保存される</text>
+</svg>
