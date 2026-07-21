@@ -29,9 +29,9 @@ func (h *StageHandler) GetStages(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	// is_unlocked はヒーローの経験値と比較して設定する
+	// is_unlocked はヒーローの経験値とレベルで判定する
 	for _, s := range stages {
-		s.IsUnlocked = hero.Experience >= s.RequiredExperience
+		s.IsUnlocked = hero.Experience >= s.RequiredExperience && hero.Level >= s.RequiredLevel
 	}
 	return c.JSON(http.StatusOK, stages)
 }

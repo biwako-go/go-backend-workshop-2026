@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS stages (
     name                VARCHAR(100) NOT NULL,
     description         TEXT,
     required_experience INT NOT NULL DEFAULT 0,
+    required_level      INT NOT NULL DEFAULT 1,
     order_num           INT NOT NULL
 );
 

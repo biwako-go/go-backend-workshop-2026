@@ -79,8 +79,10 @@ service層・repository層は持たない。参加者がコードを追いやす
 |----|---------|---------|
 | Lv1 | `pkg/server/model/battle.go` の `CalculateDamage` | `return 0` → `return attack` |
 | Lv2 | `pkg/server/handler/stage.go` の `ClearStage` | `model.UpdateHeroExperience()` の呼び出しを削除 |
-| Lv3 | `pkg/server/handler/setting.go` の `RegisterRoutes` | `api.PUT("/hero/hp", ...)` をコメントアウト |
-| Lv4 | `pkg/server/model/battle.go` の `EnemyAttack` | `time.Sleep` の追加 + ダメージを負にする |
+| Lv3 | `pkg/server/model/hero.go` の `UpdateHeroHP`、`pkg/server/handler/hero.go` の `UpdateHP`、`pkg/server/handler/setting.go` | 関数をスタブにし、ルートをコメントアウト。UpdateHeroName/UpdateNameを参考にゼロから実装させる |
+| Lv4 | `pkg/server/model/battle.go` の `EnemyAttack` | `time.Sleep(3 * time.Second)` を追加して攻撃を遅延させる |
+| Lv5 | `pkg/server/model/battle.go` の `CalcLevel` | 100以上のケースを未実装にする（常に1を返す） |
+| Lv6 | `pkg/server/model/battle.go` の `BreakSeals` | 順番処理にして時間制限を超えさせる（goroutineで並列化が正解） |
 
 ## DB構成
 
@@ -88,11 +90,14 @@ MySQL 8.0。テーブルは3つ。
 
 ```
 heroes   id / name / hp / max_hp / attack / level / experience
-stages   id / name / description / required_experience / order_num
+stages   id / name / description / required_experience / required_level / order_num
 enemies  id / stage_id / name / hp / max_hp / attack / experience_reward
 ```
 
 ヒーローは常にid=1の1件のみ。
+
+`required_level` はLv5のバグと連動。Dragon's Lair（stage5）のみ `required_level=2`。
+CalcLevelのバグでlevelが上がらず → Dragon's Lairが解放されない、という体験になる。
 
 ## 起動
 

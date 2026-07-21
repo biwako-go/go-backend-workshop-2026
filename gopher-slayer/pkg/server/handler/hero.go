@@ -59,19 +59,9 @@ func (h *HeroHandler) UpdateExperience(c echo.Context) error {
 // UpdateHP はヒーローの現在HPを更新する。
 // PUT /api/hero/hp
 //
-// [Lv3 バグ仕込み箇所]
-// このハンドラー自体は実装済みだが、バグ版では setting.go のルート登録がコメントアウトされているため404になる。
-// api.PUT("/hero/hp", hero.UpdateHP) を追加することで修正できる。
+// [Lv3 実装箇所]
+// UpdateName を参考に実装しよう。
 func (h *HeroHandler) UpdateHP(c echo.Context) error {
-	var req model.UpdateHPRequest
-	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
-	}
-	if req.HP <= 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "hp must be greater than 0"})
-	}
-	if err := model.UpdateHeroHP(h.db, req.HP); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-	}
-	return c.JSON(http.StatusOK, map[string]string{"message": "HP updated successfully"})
+	// ここに実装する
+	return nil
 }

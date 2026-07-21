@@ -36,3 +36,21 @@ func (h *BattleHandler) EnemyAttack(c echo.Context) error {
 	result := model.EnemyAttack(req)
 	return c.JSON(http.StatusOK, result)
 }
+
+// BreakSeals はボスの封印を同時に解く処理。
+// 2秒以内に全封印を解かないとボスのHPが回復してしまう。
+// POST /api/battle/seals
+func (h *BattleHandler) BreakSeals(c echo.Context) error {
+	var req model.BreakSealsRequest
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+	}
+	if len(req.Attacks) == 0 {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "attacks is required"})
+	}
+	result := model.BreakSeals(req)
+	if !result.Success {
+		return c.JSON(http.StatusUnprocessableEntity, result)
+	}
+	return c.JSON(http.StatusOK, result)
+}

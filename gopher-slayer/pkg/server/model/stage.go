@@ -7,8 +7,9 @@ type Stage struct {
 	Name               string `json:"name"`
 	Description        string `json:"description"`
 	RequiredExperience int    `json:"required_experience"`
+	RequiredLevel      int    `json:"required_level"`
 	OrderNum           int    `json:"order_num"`
-	// IsUnlocked はDBに保存しない。ハンドラー側でヒーローの経験値と比較して設定する。
+	// IsUnlocked はDBに保存しない。ハンドラー側でヒーローの経験値・レベルと比較して設定する。
 	IsUnlocked bool `json:"is_unlocked"`
 }
 
@@ -21,7 +22,7 @@ type ClearStageResponse struct {
 // GetAllStages は order_num 順にすべてのステージを返す。
 func GetAllStages(db *sql.DB) ([]*Stage, error) {
 	rows, err := db.Query(`
-		SELECT id, name, description, required_experience, order_num
+		SELECT id, name, description, required_experience, required_level, order_num
 		FROM stages ORDER BY order_num ASC
 	`)
 	if err != nil {
@@ -32,7 +33,7 @@ func GetAllStages(db *sql.DB) ([]*Stage, error) {
 	var stages []*Stage
 	for rows.Next() {
 		s := &Stage{}
-		if err := rows.Scan(&s.ID, &s.Name, &s.Description, &s.RequiredExperience, &s.OrderNum); err != nil {
+		if err := rows.Scan(&s.ID, &s.Name, &s.Description, &s.RequiredExperience, &s.RequiredLevel, &s.OrderNum); err != nil {
 			return nil, err
 		}
 		stages = append(stages, s)

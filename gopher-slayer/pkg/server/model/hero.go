@@ -45,16 +45,20 @@ func UpdateHeroName(db *sql.DB, name string) error {
 	return err
 }
 
-// UpdateHeroExperience はヒーローの経験値を更新する。
+// UpdateHeroExperience はヒーローの経験値とレベルを更新する。
+// 経験値からCalcLevelでレベルを計算してDBに保存する。
 // Lv2のタスク（ClearStage）で呼び出す。
 func UpdateHeroExperience(db *sql.DB, experience int) error {
-	_, err := db.Exec(`UPDATE heroes SET experience = ? WHERE id = 1`, experience)
+	level := CalcLevel(experience)
+	_, err := db.Exec(`UPDATE heroes SET experience = ?, level = ? WHERE id = 1`, experience, level)
 	return err
 }
 
 // UpdateHeroHP はヒーローの現在HPを更新する。
-// Lv3のタスクでルートを追加することで呼び出せるようになる。
+//
+// [Lv3 実装箇所]
+// UpdateHeroName を参考に実装しよう。
 func UpdateHeroHP(db *sql.DB, hp int) error {
-	_, err := db.Exec(`UPDATE heroes SET hp = ? WHERE id = 1`, hp)
-	return err
+	// ここに実装する
+	return nil
 }

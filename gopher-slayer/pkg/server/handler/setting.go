@@ -10,10 +10,9 @@ func RegisterRoutes(e *echo.Echo, hero *HeroHandler, stage *StageHandler, battle
 	api.GET("/hero", hero.GetHero)
 	api.PUT("/hero/name", hero.UpdateName)
 	api.PUT("/hero/experience", hero.UpdateExperience)
-	// [Lv3 バグ仕込み箇所]
-	// バグ版では下の行がコメントアウトされており、404になる。
-	// この行を追加することで修正できる。
-	api.PUT("/hero/hp", hero.UpdateHP)
+	// [Lv3 実装箇所]
+	// UpdateHP の実装が完成したら、ここにルートを追加しよう。
+	// api.PUT("/hero/hp", hero.UpdateHP)
 
 	// ステージ
 	api.GET("/stages", stage.GetStages)
@@ -23,4 +22,5 @@ func RegisterRoutes(e *echo.Echo, hero *HeroHandler, stage *StageHandler, battle
 	// バトル
 	api.POST("/battle/attack", battle.Attack)
 	api.POST("/battle/enemy-attack", battle.EnemyAttack)
+	api.POST("/battle/seals", battle.BreakSeals)
 }
