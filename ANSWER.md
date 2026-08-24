@@ -96,80 +96,83 @@ func (s *BattleService) EnemyAttack(req EnemyAttackRequest) AttackResponse {
 
 ---
 
-## Lv5（応用）：ボスのステータスを変更するAPIがない
+## Lv5：特定の敵の攻撃だけ遅い
 
-`PUT /api/enemies/:id` をゼロから実装します。
-
-### 1. repository — `pkg/server/repository/stage.go`
+**修正ファイル：** `pkg/server/handler/battle.go`
 
 ```go
-type UpdateEnemyParams struct {
-    HP     int
-    MaxHP  int
-    Attack int
+// 修正前
+if req.EnemyName == "Boss Dragon" {
+    time.Sleep(5 * time.Second)  // ← この条件ブロックを丸ごと削除
 }
 
-func (r *StageRepository) UpdateEnemy(id int, params UpdateEnemyParams) error {
-    _, err := r.db.Exec(
-        `UPDATE enemies SET hp = ?, max_hp = ?, attack = ? WHERE id = ?`,
-        params.HP, params.MaxHP, params.Attack, id,
-    )
-    return err
+// 修正後（ブロックを削除するだけ）
+result := model.EnemyAttack(req)
+return c.JSON(http.StatusOK, result)
+```
+
+---
+
+## Lv6：テストを書いてバグを見つける
+
+**テストケース例：**
+
+```go
+tests := []struct {
+    name      string
+    currentHP int
+    damage    int
+    want      int
+}{
+    {"通常のダメージ", 100, 30, 70},
+    {"ちょうど0になるダメージ", 100, 100, 0},
+    {"致死ダメージ", 10, 20, 0},  // ← このケースで失敗する
 }
 ```
 
-### 2. service — `pkg/server/service/stage.go`
+**修正ファイル：** `pkg/server/model/battle.go`
 
 ```go
-type UpdateEnemyRequest struct {
-    HP     int `json:"hp"`
-    MaxHP  int `json:"max_hp"`
-    Attack int `json:"attack"`
-}
-
-func (s *StageService) UpdateEnemy(id int, req UpdateEnemyRequest) error {
-    return s.stageRepo.UpdateEnemy(id, repository.UpdateEnemyParams{
-        HP:     req.HP,
-        MaxHP:  req.MaxHP,
-        Attack: req.Attack,
-    })
-}
-```
-
-### 3. handler — `pkg/server/handler/stage.go`
-
-```go
-func (h *StageHandler) UpdateEnemy(c echo.Context) error {
-    id, err := strconv.Atoi(c.Param("id"))
-    if err != nil {
-        return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid enemy id"})
+// 修正前
+func ApplyDamage(currentHP, damage int) int {
+    if currentHP-damage < 0 {
+        return 1  // ← バグ
     }
-    var req service.UpdateEnemyRequest
-    if err := c.Bind(&req); err != nil {
-        return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+    return currentHP - damage
+}
+
+// 修正後
+func ApplyDamage(currentHP, damage int) int {
+    if currentHP-damage < 0 {
+        return 0
     }
-    if err := h.stageService.UpdateEnemy(id, req); err != nil {
-        return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
-    }
-    return c.JSON(http.StatusOK, map[string]string{"message": "Enemy updated successfully"})
+    return currentHP - damage
 }
 ```
 
-### 4. routing — `pkg/server/handler/setting.go`
+---
+
+## Lv7：封印を並列に解かないとボスが倒せない
+
+**修正ファイル：** `pkg/server/model/seal.go`
 
 ```go
-// Stage ルートの末尾に追加
-api.GET("/stages", stage.GetStages)
-api.GET("/stages/:id/enemies", stage.GetEnemies)
-api.POST("/stages/:id/clear", stage.ClearStage)
-api.PUT("/enemies/:id", stage.UpdateEnemy)  // ← 追加
+// 修正後
+func BreakAllSeals() []string {
+    seals := []string{"炎の封印", "水の封印", "風の封印", "大地の封印", "闇の封印"}
+    results := make([]string, len(seals))
+    var wg sync.WaitGroup
+    for i, seal := range seals {
+        wg.Add(1)
+        go func(i int, seal string) {
+            defer wg.Done()
+            time.Sleep(1 * time.Second)
+            results[i] = seal + "を解いた！"
+        }(i, seal)
+    }
+    wg.Wait()
+    return results
+}
 ```
 
-### 動作確認
-
-```bash
-curl -X PUT http://localhost:8080/api/enemies/5 \
-  -H "Content-Type: application/json" \
-  -d '{"hp": 100, "max_hp": 100, "attack": 10}'
-# → {"message":"Enemy updated successfully"}
-```
+import に `"sync"` を追加するのを忘れずに。

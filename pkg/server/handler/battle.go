@@ -2,6 +2,7 @@ package handler
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/maropook/gopher-slayer/pkg/server/model"
@@ -38,6 +39,11 @@ func (h *BattleHandler) EnemyAttack(c echo.Context) error {
 	var req model.EnemyAttackRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+	}
+	// [Lv5 バグ仕込み箇所]
+	// Boss Dragon の攻撃だけなぜか遅い。モデル層だけでなくハンドラー層も確認しよう。
+	if req.EnemyName == "Boss Dragon" {
+		time.Sleep(5 * time.Second)
 	}
 	result := model.EnemyAttack(req)
 	return c.JSON(http.StatusOK, result)

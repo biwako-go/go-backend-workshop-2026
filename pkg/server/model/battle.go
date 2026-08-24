@@ -42,6 +42,17 @@ func HeroAttack(req AttackRequest) AttackResponse {
 	}
 }
 
+// ApplyDamage はダメージを適用し、HP（0以上）を返す。
+//
+// [Lv6 バグ仕込み箇所]
+// テストを書いてバグを見つけよう。
+func ApplyDamage(currentHP, damage int) int {
+	if currentHP-damage < 0 {
+		return 1 // ← バグ: 0 にすべき
+	}
+	return currentHP - damage
+}
+
 // EnemyAttack は敵の攻撃ダメージを計算して返す。
 //
 // [Lv4 バグ仕込み箇所]

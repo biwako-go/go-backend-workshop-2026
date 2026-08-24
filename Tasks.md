@@ -131,16 +131,130 @@ func EnemyAttack(req EnemyAttackRequest) AttackResponse {
 
 ---
 
-## Lv5：発展課題
+## Lv5：特定の敵の攻撃だけ遅い（Go経験者向け）
+
+**症状：** Stage5「Dragon's Lair」の「Boss Dragon」の攻撃だけ、なぜか5秒かかる。
+Lv4 で `model/battle.go` のバグは直したはずなのに…。
+
+**やること：** バグをコードの中から見つけて修正する。
+
+- ヒント：モデル層だけでなく、ハンドラー層も確認してみよう。
+- ヒント：リクエストはどのファイルをたどって処理されるか？
+
+**コードの流れ：**
+
+```
+pkg/server/handler/setting.go（ルーティング）
+  └─ pkg/server/handler/battle.go の EnemyAttack()
+       └─ pkg/server/model/battle.go の EnemyAttack()
+```
+
+**動作確認（curl）：**
+
+```bash
+# 修正前は5秒かかる、修正後はすぐ返ってくる
+curl -X POST http://localhost:8080/api/battle/enemy-attack \
+  -H "Content-Type: application/json" \
+  -d '{"enemy_attack": 50, "enemy_name": "Boss Dragon"}'
+```
+
+**体験できること：** デバッグ力、処理の流れをレイヤーをまたいで読む力
+
+---
+
+## Lv6：テストを書いてバグを見つける（Go経験者向け）
+
+**症状：** ヒーローがどんな攻撃を受けても死なない（HPが1以上になってしまう）。
+
+**やること：** `pkg/server/model/battle_test.go` にテストケースを追加してバグを見つけ、修正する。
+
+### Step 1：テストを書く
+
+`pkg/server/model/battle_test.go` にテストケースを追加しよう。
+
+```go
+tests := []struct {
+    name      string
+    currentHP int
+    damage    int
+    want      int
+}{
+    {"通常のダメージ", 100, 30, 70},
+    // ← ここにケースを追加してバグを見つけよう
+}
+```
+
+### Step 2：テストを実行する
+
+```bash
+go test ./pkg/server/model/ -run TestApplyDamage -v
+```
+
+テストが失敗したら、失敗したケースのヒントをもとにバグを探そう。
+
+### Step 3：バグを修正する
+
+**修正箇所：** `pkg/server/model/battle.go` の `ApplyDamage`
+
+**体験できること：** テーブル駆動テスト、`go test` の使い方、テストでバグを発見する体験
+
+---
+
+## Lv7：封印を並列に解かないとボスが倒せない（Go経験者向け）
+
+**症状：** `POST /api/stages/5/challenge` を叩くと5秒かかった末に `408 Request Timeout` になる。
+
+```bash
+curl -X POST http://localhost:8080/api/stages/5/challenge
+# → 5秒後に {"error":"封印解除が遅すぎる！..."}
+```
+
+ボスに挑むには3秒以内に5つの封印をすべて解く必要があるが、今は順番に解いているので間に合わない。
+
+**やること：** `pkg/server/model/seal.go` の `BreakAllSeals` を goroutine と sync.WaitGroup を使って並列化する。
+
+### ヒント
+
+```go
+// 今のコード（順番に解く → 5秒かかる）
+for i, seal := range seals {
+    time.Sleep(1 * time.Second)
+    results[i] = seal + "を解いた！"
+}
+
+// 並列にすると約1秒で完了する
+var wg sync.WaitGroup
+for i, seal := range seals {
+    wg.Add(1)
+    go func(i int, seal string) {
+        defer wg.Done()
+        // ...
+    }(i, seal)
+}
+wg.Wait()
+```
+
+**動作確認：**
+
+```bash
+# 修正後は1秒以内に200 OKが返ってくる
+curl -X POST http://localhost:8080/api/stages/5/challenge
+```
+
+**体験できること：** goroutine、sync.WaitGroup、並列処理による高速化
+
+---
+
+## Lv8：発展課題
 
 クリアしたら好きなものに挑戦しよう。
 
 | カテゴリ | チャレンジ例 |
 |---------|------------|
-| テスト | Unit Test, Integration Test, E2E Test, TDD, BDD, カバレッジ80% |
+| テスト | Integration Test, E2E Test, TDD, BDD, カバレッジ80% |
 | DB | Redis, Index追加, Migration, N+1解消, Transaction |
 | アーキテクチャ | クリーンアーキテクチャ, DDD, デザインパターン, DI |
-| Go深掘り | Goroutine, context伝播, Graceful Shutdown, pprof, embed |
+| Go深掘り | context伝播, Graceful Shutdown, pprof, embed |
 | API品質 | バリデーション, 認証(JWT), Rate Limiting, 構造化ログ, エラーハンドリング統一 |
 | 可観測性 | メトリクス(Prometheus), 分散トレーシング(OpenTelemetry), slog |
 | 新機能 | ガチャ機能, 武器システム, gRPC, GraphQL |

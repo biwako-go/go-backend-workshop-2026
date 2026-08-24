@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/labstack/echo/v4"
 	"github.com/maropook/gopher-slayer/pkg/server/model"
@@ -90,5 +91,22 @@ func (h *StageHandler) ClearStage(c echo.Context) error {
 		Message:          fmt.Sprintf("Stage '%s' cleared!", stage.Name),
 		ExperienceGained: expGained,
 		NewExperience:    newExp,
+	})
+}
+
+// ChallengeBoss はボスに挑む前に封印を解く。
+// 3秒以内に全封印を解けないとボスは待ってくれない。
+// POST /api/stages/5/challenge
+func (h *StageHandler) ChallengeBoss(c echo.Context) error {
+	start := time.Now()
+	results := model.BreakAllSeals()
+	if time.Since(start) > 3*time.Second {
+		return c.JSON(http.StatusRequestTimeout, map[string]string{
+			"error": "封印解除が遅すぎる！3秒以内に解かないとボスは待ってくれない",
+		})
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message": "すべての封印を解いた！ボスと戦える！",
+		"seals":   results,
 	})
 }

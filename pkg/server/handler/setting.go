@@ -18,6 +18,7 @@ func RegisterRoutes(e *echo.Echo, hero *HeroHandler, stage *StageHandler, battle
 	api.GET("/stages", stage.GetStages)
 	api.GET("/stages/:id/enemies", stage.GetEnemies)
 	api.POST("/stages/:id/clear", stage.ClearStage)
+	api.POST("/stages/5/challenge", stage.ChallengeBoss)
 
 	// バトル
 	api.POST("/battle/attack", battle.Attack)

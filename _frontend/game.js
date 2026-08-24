@@ -252,6 +252,7 @@ function loadCurrentEnemy() {
 
 // ---- Hero attacks ----
 async function heroAttack() {
+  const enemy = enemies[heroAttack]
   if (isBusy) return;
   isBusy = true;
   setActionsEnabled(false);

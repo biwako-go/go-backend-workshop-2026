@@ -52,13 +52,15 @@ service層・repository層は持たない。参加者がコードを追いやす
 │       ├── handler/
 │       │   ├── setting.go     # ルーティング（Lv3バグ箇所）
 │       │   ├── hero.go        # ヒーロー関連API
-│       │   ├── stage.go       # ステージ関連API（Lv2バグ箇所）
-│       │   └── battle.go      # バトル関連API
+│       │   ├── stage.go       # ステージ関連API（Lv2, Lv7バグ箇所）
+│       │   └── battle.go      # バトル関連API（Lv4, Lv5バグ箇所）
 │       └── model/
 │           ├── hero.go        # Hero struct + DB操作
 │           ├── stage.go       # Stage struct + DB操作
 │           ├── enemy.go       # Enemy struct + DB操作
-│           └── battle.go      # ダメージ計算（Lv1, Lv4バグ箇所）
+│           ├── battle.go      # ダメージ計算（Lv1, Lv4, Lv6バグ箇所）
+│           ├── battle_test.go # Lv6 スターターテスト
+│           └── seal.go        # 封印解除（Lv7バグ箇所）
 ├── _frontend/                 # ゲーム画面（参加者は触らない）
 │   ├── index.html
 │   ├── style.css
@@ -80,7 +82,10 @@ service層・repository層は持たない。参加者がコードを追いやす
 | Lv1 | `pkg/server/model/battle.go` の `CalculateDamage` | `return 0` → `return attack` |
 | Lv2 | `pkg/server/handler/stage.go` の `ClearStage` | `model.UpdateHeroExperience()` の呼び出しを削除 |
 | Lv3 | `pkg/server/handler/setting.go` の `RegisterRoutes` | `api.PUT("/hero/hp", ...)` をコメントアウト |
-| Lv4 | `pkg/server/model/battle.go` の `EnemyAttack` | `time.Sleep` の追加 + ダメージを負にする |
+| Lv4 | `pkg/server/model/battle.go` の `EnemyAttack` + `handler/battle.go` の `Attack` | `time.Sleep` の追加 + ダメージを負にする + Demon 攻撃反転 |
+| Lv5 | `pkg/server/handler/battle.go` の `EnemyAttack` | Boss Dragon のみ `time.Sleep(5s)` を追加 |
+| Lv6 | `pkg/server/model/battle.go` の `ApplyDamage` | 致死ダメージ時に `return 1`（正しくは `return 0`） |
+| Lv7 | `pkg/server/model/seal.go` の `BreakAllSeals` | 封印を順番に解く（goroutine + WaitGroup で並列化が正解） |
 
 ## DB構成
 

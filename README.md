@@ -61,21 +61,24 @@ docker compose down -v
 docker compose up -d db
 ```
 
-**ポート 3306 が使用中**
+**ポート 3307 が使用中**
 
-`.env` と `docker compose.yaml` のポート番号を揃えて変更してください（例: 3307）。
+`docker-compose.yaml` のポート番号を変更し、環境変数 `DB_PORT` を合わせてください。
 
 ```yaml
-# docker compose.yaml
+# docker-compose.yaml
 ports:
-  - "3307:3306"
+  - "3308:3306"  # 例: 3308 に変更
 ```
 
-```env
-# .env
-DB_PORT=3307
+```bash
+DB_PORT=3308 go run ./cmd/main.go
 ```
 
 **ポート 8080 が使用中**
 
-`.env` の `PORT` を変更してください。
+環境変数 `PORT` を指定して起動してください。
+
+```bash
+PORT=8081 go run ./cmd/main.go
+```
