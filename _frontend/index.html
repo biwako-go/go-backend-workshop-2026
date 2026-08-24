@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gopher Slayer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ========== STAGE SELECT SCREEN ========== -->
+  <div id="stage-screen" class="screen active">
+    <div class="stage-layout">
+
+      <!-- Left: Character Card -->
+      <div class="char-card">
+        <div class="char-card-bg">
+          <img class="char-portrait" src="/images/gopher-enemies/gopher-shigaraki.png" alt="hero" />
+          <div class="char-info">
+            <div class="char-row">
+              <span class="char-label">名前</span>
+              <span class="char-value" id="cc-name">Gopher</span>
+            </div>
+            <div class="char-row">
+              <span class="char-label">レベル</span>
+              <span class="char-value">Lv<span id="cc-lv">1</span></span>
+            </div>
+            <div class="char-row char-hp-row">
+              <span class="char-label">HP</span>
+              <span class="char-value"><span id="cc-hp">100</span> / <span id="cc-maxhp">100</span></span>
+              <div class="cc-hp-bar"><div class="cc-hp-fill" id="cc-hp-fill" style="width:100%"></div></div>
+            </div>
+            <div class="char-row">
+              <span class="char-label">経験値</span>
+              <span class="char-value"><span id="cc-exp">0</span> / <span id="cc-nextexp">40</span></span>
+            </div>
+            <div class="char-row">
+              <span class="char-label">こうげき</span>
+              <span class="char-value" id="cc-atk">15</span>
+            </div>
+          </div>
+          <div class="char-actions">
+            <button class="char-btn" onclick="toggleHPEditor()">
+              <img src="/images/icons/training-sprout.png" alt="" />
+              <span>HP編集</span>
+            </button>
+            <button class="char-btn dummy">
+              <img src="/images/icons/training-book.png" alt="" />
+              <span>育成</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- HP Editor -->
+        <div id="hp-editor" class="hp-editor" style="display:none">
+          <span class="hp-editor-label">新しいHP:</span>
+          <input id="hp-input" type="number" min="1" max="999" value="100" class="hp-input" />
+          <button class="char-btn" onclick="submitEditHP()">セット</button>
+          <button class="char-btn" onclick="toggleHPEditor()">キャンセル</button>
+          <span id="hp-editor-msg" class="hp-editor-msg"></span>
+        </div>
+      </div>
+
+      <!-- Center: Stage List -->
+      <div class="stage-list-panel">
+        <div class="panel-title">ステージ選択</div>
+        <div class="stage-list" id="stage-list">
+          <p class="loading-text">Loading...</p>
+        </div>
+      </div>
+
+      <!-- Right: Server Log -->
+      <div class="server-log-panel">
+        <div class="log-resize-handle" onmousedown="startLogResize(event)"></div>
+        <div class="server-log-title">
+          <span>SERVER LOG</span>
+          <div class="log-font-controls">
+            <button onclick="changeLogFontSize(-1)">−</button>
+            <button onclick="changeLogFontSize(1)">＋</button>
+          </div>
+        </div>
+        <div class="server-log-content" id="server-log-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== BATTLE SCREEN ========== -->
+  <div id="battle-screen" class="screen">
+    <div class="battle-layout">
+
+      <!-- Left: Battle Field -->
+      <div class="battle-field-wrap">
+        <div class="battle-field">
+
+          <!-- Enemy status box (top-left) -->
+          <div class="battle-enemy-info">
+            <span class="battle-enemy-name" id="enemy-cname">Enemy</span>
+            <div class="battle-hp-bar-wrap">
+              <span class="battle-hp-label">HP</span>
+              <div class="battle-hp-bar"><div class="battle-hp-fill" id="enemy-hp-fill" style="width:100%"></div></div>
+              <span class="battle-hp-text" id="enemy-chp">30/30</span>
+            </div>
+          </div>
+
+          <!-- Enemy sprite (right dirt circle) -->
+          <img class="battle-enemy-sprite" id="enemy-sprite" src="" alt="enemy" />
+
+          <!-- Hero sprite (left dirt circle) -->
+          <img class="battle-hero-sprite" src="/images/gopher-enemies/gopher-shigaraki-back.png" alt="hero" />
+
+          <!-- Hero status box (bottom-right) -->
+          <div class="battle-hero-info">
+            <span class="battle-hero-name">
+              <span id="hero-cname">Gopher</span>
+              <span class="battle-hero-lv">Lv<span id="battle-lv">1</span></span>
+            </span>
+            <div class="battle-hp-bar-wrap">
+              <span class="battle-hp-label">HP</span>
+              <div class="battle-hp-bar hero-bar"><div class="battle-hp-fill hero-fill" id="hero-hp-fill" style="width:100%"></div></div>
+              <span class="battle-hp-text" id="hero-chp">100/100</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Dialog box -->
+        <div class="battle-dialog">
+          <div class="dialog-text" id="dialog-text">どうする？</div>
+        </div>
+
+        <!-- Command buttons -->
+        <div class="battle-commands">
+          <button class="cmd-btn" id="btn-attack" onclick="heroAttack()">
+            <img src="/images/icons/battle-punch.png" alt="" />
+            <span>たたかう</span>
+          </button>
+          <button class="cmd-btn dummy" id="btn-bag">
+            <span>バッグ</span>
+          </button>
+          <button class="cmd-btn" id="btn-help" onclick="showHelp()">
+            <span>ヘルプ</span>
+          </button>
+          <button class="cmd-btn back-btn" id="btn-back" onclick="goToStageSelect()">
+            <span>にげる</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Server Log -->
+      <div class="server-log-panel">
+        <div class="log-resize-handle" onmousedown="startLogResize(event)"></div>
+        <div class="server-log-title">
+          <span>SERVER LOG</span>
+          <div class="log-font-controls">
+            <button onclick="changeLogFontSize(-1)">−</button>
+            <button onclick="changeLogFontSize(1)">＋</button>
+          </div>
+        </div>
+        <div class="server-log-content" id="server-log-battle"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== RESULT SCREEN ========== -->
+  <div id="result-screen" class="screen">
+    <div class="result-layout">
+      <div class="result-main">
+        <div class="result-icon" id="result-icon">🏆</div>
+        <div class="result-title" id="result-title">Victory!</div>
+        <div class="result-detail" id="result-detail"></div>
+        <button class="result-back-btn" onclick="goToStageSelect()">ステージ選択へ戻る</button>
+      </div>
+      <!-- Right: Server Log -->
+      <div class="server-log-panel">
+        <div class="log-resize-handle" onmousedown="startLogResize(event)"></div>
+        <div class="server-log-title">
+          <span>SERVER LOG</span>
+          <div class="log-font-controls">
+            <button onclick="changeLogFontSize(-1)">−</button>
+            <button onclick="changeLogFontSize(1)">＋</button>
+          </div>
+        </div>
+        <div class="server-log-content" id="server-log-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== HELP MODAL ========== -->
+  <div id="help-modal" class="modal-overlay" style="display:none" onclick="closeHelp(event)">
+    <div class="modal-box">
+      <div class="modal-lv" id="modal-lv">Lv1</div>
+      <div class="modal-title" id="modal-title">FIX ATTACK FUNCTION</div>
+      <div class="modal-hint" id="modal-hint"></div>
+      <button class="char-btn primary" onclick="closeHelpBtn()">閉じる</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
