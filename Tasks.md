@@ -6,7 +6,7 @@
 
 ## Lv1：ヒーローが攻撃しても0ダメージ
 
-**症状：** 攻撃ボタンを押しても「You dealt 0 damage!」と表示され、敵のHPが減らない。
+**症状：** 攻撃ボタンを押しても「0 ダメージを与えた！」と表示され、敵のHPが減らない。
 
 **修正箇所：** `pkg/server/service/battle.go`
 
@@ -45,14 +45,14 @@ newExp := hero.Experience + expGained
 return c.JSON(http.StatusOK, service.ClearStageResponse{...})
 ```
 
-**やること：** `model.UpdateHeroExperience()` を呼び出す処理を追加する。
-参考として、`pkg/server/repository/hero.go の UpdateName()` を見てみよう。
+**やること：** `h.heroRepo.UpdateExperience()` を呼び出す処理を追加する。
+参考として、`pkg/server/repository/hero.go` の `UpdateName()` を見てみよう。
 
 **完成イメージ：**
 ```go
 // DBに経験値を保存する
 if err := h.heroRepo.UpdateExperience(newExp); err != nil {
-    return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to update experience"})
+    return c.JSON(http.StatusInternalServerError, map[string]string{"error": "経験値の更新に失敗しました"})
 }
 ```
 
@@ -62,7 +62,7 @@ if err := h.heroRepo.UpdateExperience(newExp); err != nil {
 
 ## Lv3：ラストステージのボスが強すぎて詰んだ
 
-**症状：** Stage5「Dragon's Lair」のBoss Dragonの攻撃力が50もあり、どうやっても勝てない。
+**症状：** 「ドラゴンの巣」ステージの「ボスドラゴン」の攻撃力が50もあり、どうやっても勝てない。
 ゲーム画面の「HP編集」ボタンを押すとエラーになる。
 `PUT /api/hero/hp` というAPIを呼んでいるが、このエンドポイントが存在しないためだ。
 
@@ -109,32 +109,28 @@ pkg/server/handler/setting.go（ルーティング）
 
 ---
 
-## Lv4：特定の敵の攻撃がおかしい（Goを触ったことがある人向け）
+## Lv4：デーモンへの攻撃が反転する（Goを触ったことがある人向け）
 
-**症状：** Hell Gateステージの「Demon」と戦うと、
-攻撃が来るまで数秒かかり、しかもHPが増えてしまう（ダメージがマイナスになっている）。
+**症状：** 「地獄の門」ステージの「デーモン」を攻撃すると、なぜかデーモンのHPが**増える**。
 
-**修正箇所：** `pkg/server/service/battle.go` の `EnemyAttack`
+**やること：** バグをコードの中から見つけて修正する。
+
+**修正箇所：** `pkg/server/handler/battle.go` の `Attack`
 
 ```go
-func EnemyAttack(req EnemyAttackRequest) AttackResponse {
+func (h *BattleHandler) Attack(c echo.Context) error {
     // ← バグが仕込まれている。コードをよく読んで見つけよう。
 }
 ```
 
-**やること：** バグを自分で見つけて修正する。
-
-- ヒント1：なぜ攻撃が遅いのか？
-- ヒント2：なぜHPが増えてしまうのか？
-
-**体験できること：** デバッグ力、処理の流れを追う読解力
+**体験できること：** ハンドラー層のデバッグ、処理の流れを追う読解力
 
 ---
 
-## Lv5：特定の敵の攻撃だけ遅い（Go経験者向け）
+## Lv5：ボスドラゴンの攻撃だけ遅い（Go経験者向け）
 
-**症状：** Stage5「Dragon's Lair」の「Boss Dragon」の攻撃だけ、なぜか5秒かかる。
-Lv4 で `service/battle.go` のバグは直したはずなのに…。
+**症状：** 「ドラゴンの巣」ステージの「ボスドラゴン」の攻撃だけ、なぜか遅い。
+Lv4 のバグは直したはずなのに…。
 
 **やること：** バグをコードの中から見つけて修正する。
 
@@ -145,26 +141,66 @@ Lv4 で `service/battle.go` のバグは直したはずなのに…。
 
 ```
 pkg/server/handler/setting.go（ルーティング）
-  └─ pkg/server/handler/battle.go の EnemyAttack()
-       └─ pkg/server/service/battle.go の EnemyAttack()
+  └─ pkg/server/handler/battle.go の EnemyAttack()  ← ここも確認！
+       └─ pkg/server/service/battle.go の EnemyAttack()  ← ここも確認！
 ```
 
 **動作確認（curl）：**
 
 ```bash
-# 修正前は5秒かかる、修正後はすぐ返ってくる
+# 修正前は遅い、修正後はすぐ返ってくる
 curl -X POST http://localhost:8080/api/battle/enemy-attack \
   -H "Content-Type: application/json" \
-  -d '{"enemy_attack": 50, "enemy_name": "Boss Dragon"}'
+  -d '{"enemy_attack": 50, "enemy_name": "ボスドラゴン", "hero_hp": 100}'
 ```
 
-**体験できること：** デバッグ力、処理の流れをレイヤーをまたいで読む力
+**体験できること：** サービス層とハンドラー層をまたいだデバッグ
 
 ---
 
-## Lv6：テストを書いてバグを見つける（Go経験者向け）
+## Lv6 [ステージ]：封印を並列に解かないとボスと戦えない（Go経験者向け）
 
-**症状：** ヒーローがどんな攻撃を受けても死なない（HPが1以上になってしまう）。
+**症状：** 「ドラゴンの巣」に入ろうとすると「封印解除に失敗！修正してから再挑戦しよう。」と表示されてバトルが始まらない。
+
+封印を解く処理が遅すぎて3秒のタイムアウトに引っかかっている。
+
+**やること：** `pkg/server/service/seal.go` の `BreakAllSeals` を goroutine と sync.WaitGroup を使って並列化する。
+
+### ヒント
+
+```go
+// 今のコード（順番に解く → 5秒かかる）
+for i, seal := range seals {
+    time.Sleep(1 * time.Second)
+    results[i] = seal + "を解いた！"
+}
+
+// 並列にすると約1秒で完了する
+var wg sync.WaitGroup
+for i, seal := range seals {
+    wg.Add(1)
+    go func(i int, seal string) {
+        defer wg.Done()
+        // ...
+    }(i, seal)
+}
+wg.Wait()
+```
+
+**動作確認（curl）：**
+
+```bash
+# 修正後は1秒以内に200 OKが返ってくる
+curl -X POST http://localhost:8080/api/stages/5/challenge
+```
+
+**体験できること：** goroutine、sync.WaitGroup、並列処理による高速化
+
+---
+
+## Lv7 [タスク]：テストを書いてバグを見つける（Go経験者向け）
+
+**症状：** ボスドラゴンの攻撃を受けてHPが0になるはずなのに、なぜか1残って死なない。
 
 **やること：** `pkg/server/service/battle_test.go` にテストケースを追加してバグを見つけ、修正する。
 
@@ -197,51 +233,6 @@ go test ./pkg/server/service/ -run TestApplyDamage -v
 **修正箇所：** `pkg/server/service/battle.go` の `ApplyDamage`
 
 **体験できること：** テーブル駆動テスト、`go test` の使い方、テストでバグを発見する体験
-
----
-
-## Lv7：封印を並列に解かないとボスが倒せない（Go経験者向け）
-
-**症状：** `POST /api/stages/5/challenge` を叩くと5秒かかった末に `408 Request Timeout` になる。
-
-```bash
-curl -X POST http://localhost:8080/api/stages/5/challenge
-# → 5秒後に {"error":"封印解除が遅すぎる！..."}
-```
-
-ボスに挑むには3秒以内に5つの封印をすべて解く必要があるが、今は順番に解いているので間に合わない。
-
-**やること：** `pkg/server/service/seal.go` の `BreakAllSeals` を goroutine と sync.WaitGroup を使って並列化する。
-
-### ヒント
-
-```go
-// 今のコード（順番に解く → 5秒かかる）
-for i, seal := range seals {
-    time.Sleep(1 * time.Second)
-    results[i] = seal + "を解いた！"
-}
-
-// 並列にすると約1秒で完了する
-var wg sync.WaitGroup
-for i, seal := range seals {
-    wg.Add(1)
-    go func(i int, seal string) {
-        defer wg.Done()
-        // ...
-    }(i, seal)
-}
-wg.Wait()
-```
-
-**動作確認：**
-
-```bash
-# 修正後は1秒以内に200 OKが返ってくる
-curl -X POST http://localhost:8080/api/stages/5/challenge
-```
-
-**体験できること：** goroutine、sync.WaitGroup、並列処理による高速化
 
 ---
 

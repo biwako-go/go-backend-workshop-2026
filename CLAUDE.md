@@ -50,15 +50,15 @@ handler → service → repository → DB
 │       ├── handler/
 │       │   ├── setting.go     # ルーティング（Lv3バグ箇所）
 │       │   ├── hero.go        # ヒーロー関連API
-│       │   ├── stage.go       # ステージ関連API（Lv2, Lv7バグ箇所）
+│       │   ├── stage.go       # ステージ関連API（Lv2バグ箇所）
 │       │   └── battle.go      # バトル関連API（Lv4, Lv5バグ箇所）
 │       ├── service/
 │       │   ├── hero.go        # Hero struct + リクエスト型
 │       │   ├── stage.go       # Stage struct + レスポンス型
 │       │   ├── enemy.go       # Enemy struct
-│       │   ├── battle.go      # ダメージ計算（Lv1, Lv4, Lv6バグ箇所）
-│       │   ├── battle_test.go # Lv6 スターターテスト
-│       │   └── seal.go        # 封印解除（Lv7バグ箇所）
+│       │   ├── battle.go      # ダメージ計算（Lv1, Lv5, Lv7バグ箇所）
+│       │   ├── battle_test.go # Lv7 スターターテスト
+│       │   └── seal.go        # 封印解除（Lv6バグ箇所）
 │       └── repository/
 │           ├── hero.go        # HeroRepository（DB操作）
 │           ├── stage.go       # StageRepository（DB操作）
@@ -83,10 +83,10 @@ handler → service → repository → DB
 | Lv1 | `pkg/server/service/battle.go` の `CalculateDamage` | `return 0` → `return attack` |
 | Lv2 | `pkg/server/handler/stage.go` の `ClearStage` | `heroRepo.UpdateExperience()` の呼び出しを削除 |
 | Lv3 | `pkg/server/handler/setting.go` の `RegisterRoutes` | `api.PUT("/hero/hp", ...)` をコメントアウト |
-| Lv4 | `pkg/server/service/battle.go` の `EnemyAttack` + `handler/battle.go` の `Attack` | `time.Sleep` の追加 + ダメージを負にする + Demon 攻撃反転 |
-| Lv5 | `pkg/server/handler/battle.go` の `EnemyAttack` | Boss Dragon のみ `time.Sleep(5s)` を追加 |
-| Lv6 | `pkg/server/service/battle.go` の `ApplyDamage` | 致死ダメージ時に `return 1`（正しくは `return 0`） |
-| Lv7 | `pkg/server/service/seal.go` の `BreakAllSeals` | 封印を順番に解く（goroutine + WaitGroup で並列化が正解） |
+| Lv4 | `pkg/server/handler/battle.go` の `Attack` | デーモンへのヒーロー攻撃ダメージを反転 |
+| Lv5 | `pkg/server/service/battle.go` の `EnemyAttack`（3s）+ `handler/battle.go` の `EnemyAttack`（5s） | ボスドラゴンのみ `time.Sleep` を追加 |
+| Lv6 [ステージ] | `pkg/server/service/seal.go` の `BreakAllSeals` | 封印を順番に解く（goroutine + WaitGroup で並列化が正解） |
+| Lv7 [タスク] | `pkg/server/service/battle.go` の `ApplyDamage` | 致死ダメージ時に `return 1`（正しくは `return 0`） |
 
 ## DB構成
 

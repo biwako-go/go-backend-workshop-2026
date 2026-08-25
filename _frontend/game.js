@@ -38,32 +38,48 @@ const STAGE_ICONS = {
   5: '/images/icons/stage-alert.png',
 };
 
+// ---- Go 経験者向けチャレンジ（ステージ5クリア後に表示）----
+const ADVANCED_CHALLENGES = [
+  {
+    lv: 'Lv6',
+    title: 'テストを書いてバグを見つける',
+    hint: '症状: ボスドラゴンの攻撃を受けてもHPが1残って死なない。\n\npkg/server/service/battle_test.go にテストケースを追加して ApplyDamage のバグを発見しよう。\n\nコマンド:\ngo test ./pkg/server/service/ -run TestApplyDamage -v',
+    action: null,
+  },
+  {
+    lv: 'Lv7',
+    title: '封印を並列に解いてボスと戦う',
+    hint: '症状: このカードをクリックすると封印解除を試みます。\n5秒後に失敗したら、pkg/server/service/seal.go の BreakAllSeals を goroutine + sync.WaitGroup で並列化しよう。',
+    action: 'challenge',
+  },
+];
+
 // ---- Help hints per stage ----
 const STAGE_HINTS = {
   1: {
     lv: 'Lv1',
-    title: 'FIX ATTACK FUNCTION',
-    hint: 'internal/service/battle_service.go の calculateDamage() を修正してください。\n現在 return 0 になっており、攻撃ダメージが常に0です。',
+    title: 'ダメージ計算を修正しよう',
+    hint: 'pkg/server/service/battle.go の CalculateDamage() を修正してください。\n現在 return 0 になっており、攻撃ダメージが常に0です。',
   },
   2: {
     lv: 'Lv2',
-    title: 'UPDATE PLAYER EXP',
-    hint: 'internal/service/stage_service.go の ClearStage() を修正してください。\n経験値を計算していますが、heroRepo.UpdateExperience() を呼んでいないためDBに保存されません。',
+    title: '経験値をDBに保存しよう',
+    hint: 'pkg/server/handler/stage.go の ClearStage() を修正してください。\n経験値を計算していますが、h.heroRepo.UpdateExperience() を呼んでいないためDBに保存されません。',
   },
   3: {
     lv: 'Lv3',
-    title: 'UPDATE PLAYER HP',
-    hint: 'main.go にルート登録が必要です。\napi.PUT("/hero/hp", heroHandler.UpdateHP) を追加すると\nHP編集ボタンが使えるようになります。',
+    title: 'HP更新のルートを追加しよう',
+    hint: 'pkg/server/handler/setting.go にルート登録が必要です。\napi.PUT("/hero/hp", hero.UpdateHP) を追加すると\nHP編集ボタンが使えるようになります。',
   },
   4: {
     lv: 'Lv4',
-    title: 'DEBUG CLOCK BUG',
-    hint: 'internal/service/battle_service.go の EnemyAttack() に怪しいコードがあります。\ntime.Sleep や ダメージの符号を確認してください。',
+    title: '攻撃が反転するバグを修正しよう',
+    hint: 'pkg/server/handler/battle.go の Attack() に怪しいコードがあります。\n特定の敵に対してダメージが反転しています。',
   },
   5: {
     lv: 'Lv5',
-    title: 'UPDATE ENEMY STATS',
-    hint: 'PUT /api/enemies/:id エンドポイントを自分で作成してください。\nrepository → service → handler → routing の順に実装します。',
+    title: 'ボスの攻撃が遅い原因を探ろう',
+    hint: 'ボスドラゴンの攻撃だけなぜか遅いのはなぜ？\npkg/server/service/battle.go と handler/battle.go の両方を確認してください。',
   },
 };
 
@@ -121,13 +137,8 @@ function updateCharCard(h) {
   document.getElementById('cc-name').textContent = h.name;
   document.getElementById('cc-lv').textContent = h.level;
   document.getElementById('cc-hp').textContent = h.hp;
-  document.getElementById('cc-maxhp').textContent = h.max_hp;
   document.getElementById('cc-exp').textContent = h.experience;
   document.getElementById('cc-atk').textContent = h.attack;
-
-  // Next stage threshold (rough estimate based on current EXP)
-  const nextExp = getNextExpThreshold(h.experience);
-  document.getElementById('cc-nextexp').textContent = nextExp;
 
   const pct = Math.max(0, (h.hp / h.max_hp) * 100);
   const fill = document.getElementById('cc-hp-fill');
@@ -142,7 +153,7 @@ function getNextExpThreshold(exp) {
 
 function updateHeroBattleHP() {
   const pct = Math.max(0, (heroHP / hero.max_hp) * 100);
-  document.getElementById('hero-chp').textContent = `${heroHP}/${hero.max_hp}`;
+  document.getElementById('hero-chp').textContent = heroHP;
   const fill = document.getElementById('hero-hp-fill');
   fill.style.width = pct + '%';
   fill.classList.toggle('low', pct < 30);
@@ -151,7 +162,7 @@ function updateHeroBattleHP() {
 function updateEnemyHP() {
   const enemy = enemies[enemyIndex];
   const pct = Math.max(0, (enemyHP / enemy.max_hp) * 100);
-  document.getElementById('enemy-chp').textContent = `${enemyHP}/${enemy.max_hp}`;
+  document.getElementById('enemy-chp').textContent = enemyHP;
   const fill = document.getElementById('enemy-hp-fill');
   fill.style.width = pct + '%';
   fill.classList.toggle('low', pct < 30);
@@ -215,6 +226,32 @@ function renderStageList(stages) {
 
     if (stage.is_unlocked) {
       card.onclick = () => startBattle(stage);
+    }
+    container.appendChild(card);
+  });
+
+  // Go 経験者向けチャレンジ（常に表示。ステージ5クリア前はロック）
+  const cleared = hero && hero.experience >= 500;
+
+  const sep = document.createElement('div');
+  sep.style.cssText = 'text-align:center; color:#7a5a2a; font-size:11px; padding:8px 0 4px;';
+  sep.textContent = '── Go 経験者向けチャレンジ ──';
+  container.appendChild(sep);
+
+  ADVANCED_CHALLENGES.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'stage-card' + (cleared ? '' : ' locked');
+    card.innerHTML = `
+      <img class="stage-icon" src="/images/icons/training-sprout.png" alt="" />
+      <div class="stage-info">
+        <div class="stage-lv">${item.lv}</div>
+        <div class="stage-name">${item.title}</div>
+        <div class="stage-req">必要EXP: 500</div>
+      </div>
+      <div class="stage-arrow">${cleared ? '？' : '🔒'}</div>
+    `;
+    if (cleared) {
+      card.onclick = () => item.action === 'challenge' ? tryChallenge(item) : showAdvancedHint(item);
     }
     container.appendChild(card);
   });
@@ -290,10 +327,11 @@ async function enemyAttack() {
       body: JSON.stringify({
         enemy_attack: enemy.attack,
         enemy_name: enemy.name,
+        hero_hp: heroHP,
       }),
     });
 
-    heroHP = Math.max(0, heroHP - result.damage);
+    heroHP = result.new_hero_hp;
     updateHeroBattleHP();
     setDialog(result.message);
 
@@ -364,7 +402,7 @@ function showResultScreen(isWin, clearResult) {
 
   if (isWin) {
     icon.textContent = '🏆';
-    title.textContent = 'Victory!';
+    title.textContent = 'クリア！';
     title.className = 'result-title win';
     detail.innerHTML = `
       Stage: <strong>${currentStage.name}</strong><br>
@@ -373,7 +411,7 @@ function showResultScreen(isWin, clearResult) {
     `;
   } else {
     icon.textContent = '💀';
-    title.textContent = 'Defeated...';
+    title.textContent = 'やられた...';
     title.className = 'result-title lose';
     detail.innerHTML = `
       <strong>${currentStage.name}</strong> でやられてしまった。<br>
@@ -392,6 +430,30 @@ function showHelp() {
   document.getElementById('modal-lv').textContent = hint.lv;
   document.getElementById('modal-title').textContent = hint.title;
   document.getElementById('modal-hint').textContent = hint.hint;
+  document.getElementById('help-modal').style.display = 'flex';
+}
+
+async function tryChallenge(item) {
+  document.getElementById('modal-lv').textContent = item.lv;
+  document.getElementById('modal-title').textContent = '封印を解いています...';
+  document.getElementById('modal-hint').textContent = '';
+  document.getElementById('help-modal').style.display = 'flex';
+  try {
+    const result = await apiFetch('/stages/5/challenge', { method: 'POST' });
+    document.getElementById('modal-title').textContent = 'クリア！';
+    document.getElementById('modal-hint').textContent =
+      result.seals.join('\n') + '\n\n' + result.message;
+  } catch (e) {
+    document.getElementById('modal-title').textContent = '封印解除に失敗！';
+    document.getElementById('modal-hint').textContent =
+      'pkg/server/service/seal.go の BreakAllSeals を goroutine + sync.WaitGroup で並列化しよう。\n順番に解くと5秒かかるが、並列にすると約1秒で完了する。';
+  }
+}
+
+function showAdvancedHint(item) {
+  document.getElementById('modal-lv').textContent = item.lv;
+  document.getElementById('modal-title').textContent = item.title;
+  document.getElementById('modal-hint').textContent = item.hint;
   document.getElementById('help-modal').style.display = 'flex';
 }
 

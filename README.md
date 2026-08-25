@@ -10,19 +10,8 @@ cmd/main.go              # エントリポイント
 pkg/server/
   handler/               # HTTPリクエストの受け取りとレスポンスの返却
     setting.go           # ルーティング
-    hero.go
-    stage.go
-    battle.go
   service/               # 型定義とビジネスロジック
-    hero.go
-    stage.go
-    enemy.go
-    battle.go
-    seal.go
   repository/            # DB操作
-    hero.go
-    stage.go
-    enemy.go
 db/init/                 # DBの初期化SQL
 _frontend/               # ゲーム画面（参加者は触らない）
 ```

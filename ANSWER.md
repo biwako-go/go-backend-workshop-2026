@@ -10,27 +10,12 @@
 
 ```go
 // 修正前
-func calculateDamage(attack int) int {
+func CalculateDamage(attack int) int {
     return 0
 }
 
-// 修正後
-func calculateDamage(attack int) int {
-    if attack <= 0 {
-        return 0
-    }
-    variance := int(float64(attack) * 0.2)
-    if variance == 0 {
-        return attack
-    }
-    return attack - variance + rand.Intn(variance*2+1)
-}
-```
-
-attackをそのまま返すだけでも正解：
-
-```go
-func calculateDamage(attack int) int {
+// 修正後（attackをそのまま返すだけでOK）
+func CalculateDamage(attack int) int {
     return attack
 }
 ```
@@ -39,15 +24,14 @@ func calculateDamage(attack int) int {
 
 ## Lv2：ステージをクリアしても経験値が増えない
 
-**修正ファイル：** `pkg/server/service/stage.go`
+**修正ファイル：** `pkg/server/handler/stage.go` の `ClearStage`
 
 ```go
-// ClearStage 内の newExp を計算した直後に追加する
 newExp := hero.Experience + expGained
 
-// ↓ この4行が抜けているのが原因
-if err := s.heroRepo.UpdateExperience(newExp); err != nil {
-    return nil, fmt.Errorf("failed to update experience: %w", err)
+// ↓ この3行が抜けているのが原因
+if err := h.heroRepo.UpdateExperience(newExp); err != nil {
+    return c.JSON(http.StatusInternalServerError, map[string]string{"error": "経験値の更新に失敗しました"})
 }
 ```
 
@@ -58,7 +42,7 @@ if err := s.heroRepo.UpdateExperience(newExp); err != nil {
 **修正ファイル：** `pkg/server/handler/setting.go`
 
 ```go
-// Hero ルートの末尾に1行追加する
+// ヒーロー
 api.GET("/hero", hero.GetHero)
 api.PUT("/hero/name", hero.UpdateName)
 api.PUT("/hero/experience", hero.UpdateExperience)
@@ -67,94 +51,87 @@ api.PUT("/hero/hp", hero.UpdateHP)  // ← この行が抜けている
 
 ---
 
-## Lv4：特定の敵の攻撃がおかしい
+## Lv4：デーモンへの攻撃が反転する
 
-**修正ファイル：** `pkg/server/service/battle.go`
-
-バグが2つ仕込まれています。
+**修正ファイル：** `pkg/server/handler/battle.go` の `Attack`
 
 ```go
 // バグ版
-func (s *BattleService) EnemyAttack(req EnemyAttackRequest) AttackResponse {
-    time.Sleep(3 * time.Second)          // ← バグ1: 不要な待機
-    damage := -calculateDamage(req.EnemyAttack)  // ← バグ2: ダメージがマイナス
-    return AttackResponse{
-        Damage:  damage,
-        Message: fmt.Sprintf("%s dealt %d damage!", req.EnemyName, damage),
+func (h *BattleHandler) Attack(c echo.Context) error {
+    ...
+    result := service.HeroAttack(req)
+    // [Lv4 バグ仕込み箇所]
+    if req.EnemyName == "デーモン" {
+        result.Damage = -result.Damage          // ← バグ: ダメージを反転
+        result.Message = "攻撃が吸収された！" + result.Message
     }
+    return c.JSON(http.StatusOK, result)
+}
+
+// 修正後（if ブロックを丸ごと削除）
+func (h *BattleHandler) Attack(c echo.Context) error {
+    ...
+    result := service.HeroAttack(req)
+    return c.JSON(http.StatusOK, result)
+}
+```
+
+---
+
+## Lv5：ボスドラゴンの攻撃だけ遅い
+
+バグが **2箇所** あります。両方直す必要があります。
+
+### 修正1: `pkg/server/service/battle.go` の `EnemyAttack`
+
+```go
+// バグ版
+func EnemyAttack(req EnemyAttackRequest) AttackResponse {
+    damage := CalculateEnemyDamage(req.EnemyAttack)
+    if req.EnemyName == "ボスドラゴン" {
+        time.Sleep(3 * time.Second)  // ← バグ: 削除する
+    }
+    ...
 }
 
 // 修正後
-func (s *BattleService) EnemyAttack(req EnemyAttackRequest) AttackResponse {
-    damage := calculateDamage(req.EnemyAttack)
+func EnemyAttack(req EnemyAttackRequest) AttackResponse {
+    damage := CalculateEnemyDamage(req.EnemyAttack)
+    newHeroHP := ApplyDamage(req.HeroHP, damage)
     return AttackResponse{
-        Damage:  damage,
-        Message: fmt.Sprintf("%s dealt %d damage!", req.EnemyName, damage),
+        Damage:    damage,
+        NewHeroHP: newHeroHP,
+        Message:   fmt.Sprintf("%s が %d ダメージを与えた！", req.EnemyName, damage),
     }
+}
+```
+
+### 修正2: `pkg/server/handler/battle.go` の `EnemyAttack`
+
+```go
+// バグ版
+func (h *BattleHandler) EnemyAttack(c echo.Context) error {
+    ...
+    if req.EnemyName == "ボスドラゴン" {
+        time.Sleep(5 * time.Second)  // ← バグ: 削除する
+    }
+    result := service.EnemyAttack(req)
+    return c.JSON(http.StatusOK, result)
+}
+
+// 修正後（if ブロックを丸ごと削除）
+func (h *BattleHandler) EnemyAttack(c echo.Context) error {
+    ...
+    result := service.EnemyAttack(req)
+    return c.JSON(http.StatusOK, result)
 }
 ```
 
 ---
 
-## Lv5：特定の敵の攻撃だけ遅い
+## Lv6 [ステージ]：封印を並列に解かないとボスと戦えない
 
-**修正ファイル：** `pkg/server/handler/battle.go`
-
-```go
-// 修正前
-if req.EnemyName == "Boss Dragon" {
-    time.Sleep(5 * time.Second)  // ← この条件ブロックを丸ごと削除
-}
-
-// 修正後（ブロックを削除するだけ）
-result := model.EnemyAttack(req)
-return c.JSON(http.StatusOK, result)
-```
-
----
-
-## Lv6：テストを書いてバグを見つける
-
-**テストケース例：**
-
-```go
-tests := []struct {
-    name      string
-    currentHP int
-    damage    int
-    want      int
-}{
-    {"通常のダメージ", 100, 30, 70},
-    {"ちょうど0になるダメージ", 100, 100, 0},
-    {"致死ダメージ", 10, 20, 0},  // ← このケースで失敗する
-}
-```
-
-**修正ファイル：** `pkg/server/service/battle.go`
-
-```go
-// 修正前
-func ApplyDamage(currentHP, damage int) int {
-    if currentHP-damage < 0 {
-        return 1  // ← バグ
-    }
-    return currentHP - damage
-}
-
-// 修正後
-func ApplyDamage(currentHP, damage int) int {
-    if currentHP-damage < 0 {
-        return 0
-    }
-    return currentHP - damage
-}
-```
-
----
-
-## Lv7：封印を並列に解かないとボスが倒せない
-
-**修正ファイル：** `pkg/server/service/seal.go`
+**修正ファイル：** `pkg/server/service/seal.go` の `BreakAllSeals`
 
 ```go
 // 修正後
@@ -176,3 +153,42 @@ func BreakAllSeals() []string {
 ```
 
 import に `"sync"` を追加するのを忘れずに。
+
+---
+
+## Lv7 [タスク]：テストを書いてバグを見つける
+
+**テストケース例：**
+
+```go
+tests := []struct {
+    name      string
+    currentHP int
+    damage    int
+    want      int
+}{
+    {"通常のダメージ", 100, 30, 70},
+    {"ちょうど0になるダメージ", 100, 100, 0},
+    {"致死ダメージ", 10, 20, 0},  // ← このケースで失敗する
+}
+```
+
+**修正ファイル：** `pkg/server/service/battle.go` の `ApplyDamage`
+
+```go
+// 修正前
+func ApplyDamage(currentHP, damage int) int {
+    if currentHP-damage < 0 {
+        return 1  // ← バグ: 0 にすべき
+    }
+    return currentHP - damage
+}
+
+// 修正後
+func ApplyDamage(currentHP, damage int) int {
+    if currentHP-damage < 0 {
+        return 0
+    }
+    return currentHP - damage
+}
+```

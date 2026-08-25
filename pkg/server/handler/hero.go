@@ -32,15 +32,15 @@ func (h *HeroHandler) GetHero(c echo.Context) error {
 func (h *HeroHandler) UpdateName(c echo.Context) error {
 	var req service.UpdateNameRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストの形式が正しくありません"})
 	}
 	if req.Name == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "name is required"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "名前を入力してください"})
 	}
 	if err := h.repo.UpdateName(req.Name); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	return c.JSON(http.StatusOK, map[string]string{"message": "Name updated successfully"})
+	return c.JSON(http.StatusOK, map[string]string{"message": "名前を更新しました"})
 }
 
 // UpdateExperience はヒーローの経験値を更新する。
@@ -48,12 +48,12 @@ func (h *HeroHandler) UpdateName(c echo.Context) error {
 func (h *HeroHandler) UpdateExperience(c echo.Context) error {
 	var req service.UpdateExperienceRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストの形式が正しくありません"})
 	}
 	if err := h.repo.UpdateExperience(req.Experience); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	return c.JSON(http.StatusOK, map[string]string{"message": "Experience updated successfully"})
+	return c.JSON(http.StatusOK, map[string]string{"message": "経験値を更新しました"})
 }
 
 // UpdateHP はヒーローの現在HPを更新する。
@@ -65,13 +65,13 @@ func (h *HeroHandler) UpdateExperience(c echo.Context) error {
 func (h *HeroHandler) UpdateHP(c echo.Context) error {
 	var req service.UpdateHPRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストの形式が正しくありません"})
 	}
 	if req.HP <= 0 {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "hp must be greater than 0"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "HPは1以上の値を指定してください"})
 	}
 	if err := h.repo.UpdateHP(req.HP); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
-	return c.JSON(http.StatusOK, map[string]string{"message": "HP updated successfully"})
+	return c.JSON(http.StatusOK, map[string]string{"message": "HPを更新しました"})
 }

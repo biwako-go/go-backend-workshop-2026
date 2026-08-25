@@ -44,7 +44,7 @@ func (h *StageHandler) GetStages(c echo.Context) error {
 func (h *StageHandler) GetEnemies(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid stage id"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "ステージIDが不正です"})
 	}
 	enemies, err := h.enemyRepo.GetByStageID(id)
 	if err != nil {
@@ -62,25 +62,25 @@ func (h *StageHandler) GetEnemies(c echo.Context) error {
 func (h *StageHandler) ClearStage(c echo.Context) error {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid stage id"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "ステージIDが不正です"})
 	}
 
 	// 1. ステージを取得
 	stage, err := h.stageRepo.GetByID(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "stage not found"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "ステージが見つかりません"})
 	}
 
 	// 2. ヒーローを取得
 	hero, err := h.heroRepo.Get()
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to get hero"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "ヒーローの取得に失敗しました"})
 	}
 
 	// 3. このステージの経験値合計を計算
 	expGained, err := h.stageRepo.GetTotalExp(id)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to calculate experience"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "経験値の計算に失敗しました"})
 	}
 
 	newExp := hero.Experience + expGained
@@ -89,11 +89,11 @@ func (h *StageHandler) ClearStage(c echo.Context) error {
 	// [Lv2 バグ仕込み箇所]
 	// ここにDBへの保存処理が抜けている
 	if err := h.heroRepo.UpdateExperience(newExp); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to update experience"})
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "経験値の更新に失敗しました"})
 	}
 
 	return c.JSON(http.StatusOK, service.ClearStageResponse{
-		Message:          fmt.Sprintf("Stage '%s' cleared!", stage.Name),
+		Message:          fmt.Sprintf("ステージ「%s」クリア！", stage.Name),
 		ExperienceGained: expGained,
 		NewExperience:    newExp,
 	})

@@ -20,29 +20,29 @@ func NewBattleHandler() *BattleHandler {
 func (h *BattleHandler) Attack(c echo.Context) error {
 	var req service.AttackRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストの形式が正しくありません"})
 	}
 	result := service.HeroAttack(req)
 	// [Lv4 バグ仕込み箇所]
-	// Demon 戦ではヒーローの攻撃が反転し、敵を回復させてしまう
-	if req.EnemyName == "Demon" {
+	// デーモン戦ではヒーローの攻撃が反転し、敵を回復させてしまう
+	if req.EnemyName == "デーモン" {
 		result.Damage = -result.Damage
-		result.Message = "Your attack was absorbed! " + result.Message
+		result.Message = "攻撃が吸収された！" + result.Message
 	}
 	return c.JSON(http.StatusOK, result)
 }
 
 // EnemyAttack は敵がヒーローを攻撃する処理。
-// サーバー側でダメージを計算し、ヒーローのHPはクライアント側で管理する。
+// サーバー側でダメージと新しいHP（ApplyDamage適用後）を計算して返す。
 // POST /api/battle/enemy-attack
 func (h *BattleHandler) EnemyAttack(c echo.Context) error {
 	var req service.EnemyAttackRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストの形式が正しくありません"})
 	}
 	// [Lv5 バグ仕込み箇所]
-	// Boss Dragon の攻撃だけなぜか遅い。サービス層だけでなくハンドラー層も確認しよう。
-	if req.EnemyName == "Boss Dragon" {
+	// ボスドラゴンの攻撃だけなぜか遅い。サービス層だけでなくハンドラー層も確認しよう。
+	if req.EnemyName == "ボスドラゴン" {
 		time.Sleep(5 * time.Second)
 	}
 	result := service.EnemyAttack(req)
