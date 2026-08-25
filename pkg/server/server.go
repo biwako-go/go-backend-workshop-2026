@@ -6,6 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/maropook/gopher-slayer/pkg/server/handler"
+	"github.com/maropook/gopher-slayer/pkg/server/repository"
 )
 
 // New はEchoインスタンスを生成し、ミドルウェア・ルート・静的ファイルを設定して返す。
@@ -27,9 +28,14 @@ func New(db *sql.DB) *echo.Echo {
 	// API仕様ファイルを配信
 	e.File("/api-document.yaml", "api-document.yaml")
 
+	// リポジトリの生成
+	heroRepo := repository.NewHeroRepository(db)
+	stageRepo := repository.NewStageRepository(db)
+	enemyRepo := repository.NewEnemyRepository(db)
+
 	// ハンドラーの生成
-	heroHandler := handler.NewHeroHandler(db)
-	stageHandler := handler.NewStageHandler(db)
+	heroHandler := handler.NewHeroHandler(heroRepo)
+	stageHandler := handler.NewStageHandler(heroRepo, stageRepo, enemyRepo)
 	battleHandler := handler.NewBattleHandler()
 
 	handler.RegisterRoutes(e, heroHandler, stageHandler, battleHandler)

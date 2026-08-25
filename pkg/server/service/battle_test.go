@@ -1,4 +1,4 @@
-package model
+package service
 
 import "testing"
 
@@ -7,7 +7,7 @@ import "testing"
 //
 // 実行方法:
 //
-//	go test ./pkg/server/model/ -run TestApplyDamage -v
+//	go test ./pkg/server/service/ -run TestApplyDamage -v
 func TestApplyDamage(t *testing.T) {
 	tests := []struct {
 		name      string

@@ -9,24 +9,22 @@ GoでHTTP APIを作る体験を、ゲームのバグ修正というかたちで�
 
 - **「動かないゲームを直す」** という体験形式にすることで、何を直せばいいかが明確になる
 - コードを読んでバグを見つけ → 修正する → ゲームが動く、という成功体験を繰り返す
-- Lv1〜Lv3は誰でも完走できる難易度。Lv4以降は応用
+- Lv1〜Lv3は誰でも完走できる難易度。Lv4以降は応用。Lv5〜Lv7はGo経験者向け
 
 ## アーキテクチャの方針
 
 ### レイヤー構成
 
 ```
-handler → model → DB
+handler → service → repository → DB
 ```
 
-service層・repository層は持たない。参加者がコードを追いやすいよう最小構成にする。
-
 - **handler**: HTTPリクエストの受け取りとレスポンスの返却
-- **model**: DB操作（SELECT/INSERT/UPDATE）とビジネスロジック
+- **service**: 型定義とビジネスロジック
+- **repository**: DB操作（SELECT/INSERT/UPDATE）
 
 ### 制約
 
-- レイヤーを増やさない（service, repositoryは作らない）
 - 抽象化・インターフェースを使わない（初心者が読めなくなるため）
 - コメントは日本語で書く
 - バグ仕込み箇所には `[LvN バグ仕込み箇所]` のコメントを必ず残す
@@ -54,20 +52,23 @@ service層・repository層は持たない。参加者がコードを追いやす
 │       │   ├── hero.go        # ヒーロー関連API
 │       │   ├── stage.go       # ステージ関連API（Lv2, Lv7バグ箇所）
 │       │   └── battle.go      # バトル関連API（Lv4, Lv5バグ箇所）
-│       └── model/
-│           ├── hero.go        # Hero struct + DB操作
-│           ├── stage.go       # Stage struct + DB操作
-│           ├── enemy.go       # Enemy struct + DB操作
-│           ├── battle.go      # ダメージ計算（Lv1, Lv4, Lv6バグ箇所）
-│           ├── battle_test.go # Lv6 スターターテスト
-│           └── seal.go        # 封印解除（Lv7バグ箇所）
+│       ├── service/
+│       │   ├── hero.go        # Hero struct + リクエスト型
+│       │   ├── stage.go       # Stage struct + レスポンス型
+│       │   ├── enemy.go       # Enemy struct
+│       │   ├── battle.go      # ダメージ計算（Lv1, Lv4, Lv6バグ箇所）
+│       │   ├── battle_test.go # Lv6 スターターテスト
+│       │   └── seal.go        # 封印解除（Lv7バグ箇所）
+│       └── repository/
+│           ├── hero.go        # HeroRepository（DB操作）
+│           ├── stage.go       # StageRepository（DB操作）
+│           └── enemy.go       # EnemyRepository（DB操作）
 ├── _frontend/                 # ゲーム画面（参加者は触らない）
 │   ├── index.html
 │   ├── style.css
 │   ├── game.js
 │   └── images/
 ├── docker-compose.yaml
-├── Dockerfile
 ├── Makefile
 ├── README.md                  # 起動方法のみ
 ├── Tasks.md                   # ワークショップタスク（参加者向け）
@@ -79,13 +80,13 @@ service層・repository層は持たない。参加者がコードを追いやす
 
 | Lv | ファイル | 修正内容 |
 |----|---------|---------|
-| Lv1 | `pkg/server/model/battle.go` の `CalculateDamage` | `return 0` → `return attack` |
-| Lv2 | `pkg/server/handler/stage.go` の `ClearStage` | `model.UpdateHeroExperience()` の呼び出しを削除 |
+| Lv1 | `pkg/server/service/battle.go` の `CalculateDamage` | `return 0` → `return attack` |
+| Lv2 | `pkg/server/handler/stage.go` の `ClearStage` | `heroRepo.UpdateExperience()` の呼び出しを削除 |
 | Lv3 | `pkg/server/handler/setting.go` の `RegisterRoutes` | `api.PUT("/hero/hp", ...)` をコメントアウト |
-| Lv4 | `pkg/server/model/battle.go` の `EnemyAttack` + `handler/battle.go` の `Attack` | `time.Sleep` の追加 + ダメージを負にする + Demon 攻撃反転 |
+| Lv4 | `pkg/server/service/battle.go` の `EnemyAttack` + `handler/battle.go` の `Attack` | `time.Sleep` の追加 + ダメージを負にする + Demon 攻撃反転 |
 | Lv5 | `pkg/server/handler/battle.go` の `EnemyAttack` | Boss Dragon のみ `time.Sleep(5s)` を追加 |
-| Lv6 | `pkg/server/model/battle.go` の `ApplyDamage` | 致死ダメージ時に `return 1`（正しくは `return 0`） |
-| Lv7 | `pkg/server/model/seal.go` の `BreakAllSeals` | 封印を順番に解く（goroutine + WaitGroup で並列化が正解） |
+| Lv6 | `pkg/server/service/battle.go` の `ApplyDamage` | 致死ダメージ時に `return 1`（正しくは `return 0`） |
+| Lv7 | `pkg/server/service/seal.go` の `BreakAllSeals` | 封印を順番に解く（goroutine + WaitGroup で並列化が正解） |
 
 ## DB構成
 
@@ -102,8 +103,8 @@ enemies  id / stage_id / name / hp / max_hp / attack / experience_reward
 ## 起動
 
 ```bash
-docker-compose up -d db
-go run ./cmd/main.go
+docker compose up -d db
+make dev
 ```
 
 詳細は [README.md](README.md) を参照。

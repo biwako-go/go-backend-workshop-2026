@@ -12,7 +12,7 @@ func RegisterRoutes(e *echo.Echo, hero *HeroHandler, stage *StageHandler, battle
 	api.PUT("/hero/experience", hero.UpdateExperience)
 	// [Lv3 バグ仕込み箇所]
 	// ここにHP更新のルートを追加してください。
-	// api.PUT("/hero/hp", hero.UpdateHP)
+	api.PUT("/hero/hp", hero.UpdateHP)
 
 	// ステージ
 	api.GET("/stages", stage.GetStages)

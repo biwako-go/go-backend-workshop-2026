@@ -1,25 +1,25 @@
 package handler
 
 import (
-	"database/sql"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
-	"github.com/maropook/gopher-slayer/pkg/server/model"
+	"github.com/maropook/gopher-slayer/pkg/server/repository"
+	"github.com/maropook/gopher-slayer/pkg/server/service"
 )
 
 type HeroHandler struct {
-	db *sql.DB
+	repo *repository.HeroRepository
 }
 
-func NewHeroHandler(db *sql.DB) *HeroHandler {
-	return &HeroHandler{db: db}
+func NewHeroHandler(repo *repository.HeroRepository) *HeroHandler {
+	return &HeroHandler{repo: repo}
 }
 
 // GetHero はヒーローの現在のステータスを返す。
 // GET /api/hero
 func (h *HeroHandler) GetHero(c echo.Context) error {
-	hero, err := model.GetHero(h.db)
+	hero, err := h.repo.Get()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
@@ -30,14 +30,14 @@ func (h *HeroHandler) GetHero(c echo.Context) error {
 // PUT /api/hero/name
 // Lv2の参考実装として使える。
 func (h *HeroHandler) UpdateName(c echo.Context) error {
-	var req model.UpdateNameRequest
+	var req service.UpdateNameRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 	if req.Name == "" {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "name is required"})
 	}
-	if err := model.UpdateHeroName(h.db, req.Name); err != nil {
+	if err := h.repo.UpdateName(req.Name); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, map[string]string{"message": "Name updated successfully"})
@@ -46,11 +46,11 @@ func (h *HeroHandler) UpdateName(c echo.Context) error {
 // UpdateExperience はヒーローの経験値を更新する。
 // PUT /api/hero/experience
 func (h *HeroHandler) UpdateExperience(c echo.Context) error {
-	var req model.UpdateExperienceRequest
+	var req service.UpdateExperienceRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
-	if err := model.UpdateHeroExperience(h.db, req.Experience); err != nil {
+	if err := h.repo.UpdateExperience(req.Experience); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, map[string]string{"message": "Experience updated successfully"})
@@ -63,14 +63,14 @@ func (h *HeroHandler) UpdateExperience(c echo.Context) error {
 // このハンドラー自体は実装済みだが、バグ版では setting.go のルート登録がコメントアウトされているため404になる。
 // api.PUT("/hero/hp", hero.UpdateHP) を追加することで修正できる。
 func (h *HeroHandler) UpdateHP(c echo.Context) error {
-	var req model.UpdateHPRequest
+	var req service.UpdateHPRequest
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 	}
 	if req.HP <= 0 {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "hp must be greater than 0"})
 	}
-	if err := model.UpdateHeroHP(h.db, req.HP); err != nil {
+	if err := h.repo.UpdateHP(req.HP); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 	}
 	return c.JSON(http.StatusOK, map[string]string{"message": "HP updated successfully"})

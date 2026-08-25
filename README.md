@@ -3,39 +3,44 @@
 Go バックエンド開発を体験するワークショップ用ゲームです。
 タスクは [Tasks.md](Tasks.md) を参照してください。
 
+## ディレクトリ構成
+
+```
+cmd/main.go              # エントリポイント
+pkg/server/
+  handler/               # HTTPリクエストの受け取りとレスポンスの返却
+    setting.go           # ルーティング
+    hero.go
+    stage.go
+    battle.go
+  service/               # 型定義とビジネスロジック
+    hero.go
+    stage.go
+    enemy.go
+    battle.go
+    seal.go
+  repository/            # DB操作
+    hero.go
+    stage.go
+    enemy.go
+db/init/                 # DBの初期化SQL
+_frontend/               # ゲーム画面（参加者は触らない）
+```
+
 ## 起動
 
 ```bash
-# DB だけ起動
+# air のインストール（初回のみ）
+go install github.com/air-verse/air@latest
+
+# DB 起動
 docker compose up -d db
 
-# アプリ起動
-go run ./cmd/main.go
+# アプリ起動（ファイル保存で自動リロード）
+make dev
 ```
 
 http://localhost:8080 でゲームが開きます。
-
-## ビルド
-
-```bash
-# バイナリをビルド（bin/server に出力）
-make build
-
-# 実行
-./bin/server
-```
-
-## 開発（ホットリロード）
-
-ファイルを保存するたびに自動でリビルド・再起動されます。
-
-```bash
-# reflex のインストール（初回のみ）
-go install github.com/cespare/reflex@latest
-
-# 自動リロードで起動
-make dev
-```
 
 ## 停止
 

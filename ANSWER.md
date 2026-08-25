@@ -130,7 +130,7 @@ tests := []struct {
 }
 ```
 
-**修正ファイル：** `pkg/server/model/battle.go`
+**修正ファイル：** `pkg/server/service/battle.go`
 
 ```go
 // 修正前
@@ -154,7 +154,7 @@ func ApplyDamage(currentHP, damage int) int {
 
 ## Lv7：封印を並列に解かないとボスが倒せない
 
-**修正ファイル：** `pkg/server/model/seal.go`
+**修正ファイル：** `pkg/server/service/seal.go`
 
 ```go
 // 修正後

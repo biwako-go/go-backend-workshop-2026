@@ -1,4 +1,4 @@
-package model
+package service
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ type EnemyAttackRequest struct {
 // [Lv1 バグ仕込み箇所]
 // この関数を完成させてください。
 func CalculateDamage(attack int) int {
-	return 0
+	return attack
 }
 
 // CalculateEnemyDamage は敵の攻撃力をもとにダメージを計算する。
@@ -55,11 +55,13 @@ func ApplyDamage(currentHP, damage int) int {
 
 // EnemyAttack は敵の攻撃ダメージを計算して返す。
 //
-// [Lv4 バグ仕込み箇所]
-// バグが仕込まれている。コードをよく読んで見つけよう。
+// [Lv5 バグ仕込み箇所]
+// Boss Dragon の攻撃だけなぜか遅い。ハンドラー層も確認しよう。
 func EnemyAttack(req EnemyAttackRequest) AttackResponse {
-	time.Sleep(3 * time.Second)
-	damage := -CalculateEnemyDamage(req.EnemyAttack)
+	damage := CalculateEnemyDamage(req.EnemyAttack)
+	if req.EnemyName == "Boss Dragon" {
+		time.Sleep(3 * time.Second)
+	}
 	return AttackResponse{
 		Damage:  damage,
 		Message: fmt.Sprintf("%s dealt %d damage!", req.EnemyName, damage),

@@ -8,7 +8,7 @@
 
 **症状：** 攻撃ボタンを押しても「You dealt 0 damage!」と表示され、敵のHPが減らない。
 
-**修正箇所：** `pkg/server/model/battle.go`
+**修正箇所：** `pkg/server/service/battle.go`
 
 ```go
 // ダメージを計算する関数
@@ -42,16 +42,16 @@ newExp := hero.Experience + expGained
 
 // ← ここにDBへの保存処理が抜けている
 
-return c.JSON(http.StatusOK, model.ClearStageResponse{...})
+return c.JSON(http.StatusOK, service.ClearStageResponse{...})
 ```
 
 **やること：** `model.UpdateHeroExperience()` を呼び出す処理を追加する。
-参考として、`pkg/server/model/hero.go` の `UpdateHeroName()` を見てみよう。
+参考として、`pkg/server/repository/hero.go の UpdateName()` を見てみよう。
 
 **完成イメージ：**
 ```go
 // DBに経験値を保存する
-if err := model.UpdateHeroExperience(h.db, newExp); err != nil {
+if err := h.heroRepo.UpdateExperience(newExp); err != nil {
     return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to update experience"})
 }
 ```
@@ -101,7 +101,7 @@ curl -X PUT http://localhost:8080/api/hero/hp \
 ```
 pkg/server/handler/setting.go（ルーティング）
   └─ pkg/server/handler/hero.go の UpdateHP()
-       └─ pkg/server/model/hero.go の UpdateHeroHP()
+       └─ pkg/server/repository/hero.go の UpdateHP()
             └─ UPDATE heroes SET hp = ? WHERE id = 1
 ```
 
@@ -114,7 +114,7 @@ pkg/server/handler/setting.go（ルーティング）
 **症状：** Hell Gateステージの「Demon」と戦うと、
 攻撃が来るまで数秒かかり、しかもHPが増えてしまう（ダメージがマイナスになっている）。
 
-**修正箇所：** `pkg/server/model/battle.go` の `EnemyAttack`
+**修正箇所：** `pkg/server/service/battle.go` の `EnemyAttack`
 
 ```go
 func EnemyAttack(req EnemyAttackRequest) AttackResponse {
@@ -134,11 +134,11 @@ func EnemyAttack(req EnemyAttackRequest) AttackResponse {
 ## Lv5：特定の敵の攻撃だけ遅い（Go経験者向け）
 
 **症状：** Stage5「Dragon's Lair」の「Boss Dragon」の攻撃だけ、なぜか5秒かかる。
-Lv4 で `model/battle.go` のバグは直したはずなのに…。
+Lv4 で `service/battle.go` のバグは直したはずなのに…。
 
 **やること：** バグをコードの中から見つけて修正する。
 
-- ヒント：モデル層だけでなく、ハンドラー層も確認してみよう。
+- ヒント：サービス層だけでなく、ハンドラー層も確認してみよう。
 - ヒント：リクエストはどのファイルをたどって処理されるか？
 
 **コードの流れ：**
@@ -146,7 +146,7 @@ Lv4 で `model/battle.go` のバグは直したはずなのに…。
 ```
 pkg/server/handler/setting.go（ルーティング）
   └─ pkg/server/handler/battle.go の EnemyAttack()
-       └─ pkg/server/model/battle.go の EnemyAttack()
+       └─ pkg/server/service/battle.go の EnemyAttack()
 ```
 
 **動作確認（curl）：**
@@ -166,11 +166,11 @@ curl -X POST http://localhost:8080/api/battle/enemy-attack \
 
 **症状：** ヒーローがどんな攻撃を受けても死なない（HPが1以上になってしまう）。
 
-**やること：** `pkg/server/model/battle_test.go` にテストケースを追加してバグを見つけ、修正する。
+**やること：** `pkg/server/service/battle_test.go` にテストケースを追加してバグを見つけ、修正する。
 
 ### Step 1：テストを書く
 
-`pkg/server/model/battle_test.go` にテストケースを追加しよう。
+`pkg/server/service/battle_test.go` にテストケースを追加しよう。
 
 ```go
 tests := []struct {
@@ -187,14 +187,14 @@ tests := []struct {
 ### Step 2：テストを実行する
 
 ```bash
-go test ./pkg/server/model/ -run TestApplyDamage -v
+go test ./pkg/server/service/ -run TestApplyDamage -v
 ```
 
 テストが失敗したら、失敗したケースのヒントをもとにバグを探そう。
 
 ### Step 3：バグを修正する
 
-**修正箇所：** `pkg/server/model/battle.go` の `ApplyDamage`
+**修正箇所：** `pkg/server/service/battle.go` の `ApplyDamage`
 
 **体験できること：** テーブル駆動テスト、`go test` の使い方、テストでバグを発見する体験
 
@@ -211,7 +211,7 @@ curl -X POST http://localhost:8080/api/stages/5/challenge
 
 ボスに挑むには3秒以内に5つの封印をすべて解く必要があるが、今は順番に解いているので間に合わない。
 
-**やること：** `pkg/server/model/seal.go` の `BreakAllSeals` を goroutine と sync.WaitGroup を使って並列化する。
+**やること：** `pkg/server/service/seal.go` の `BreakAllSeals` を goroutine と sync.WaitGroup を使って並列化する。
 
 ### ヒント
 
@@ -271,6 +271,6 @@ curl -X POST http://localhost:8080/api/stages/5/challenge
 
 | 参考にできる実装 | ファイル |
 |----------------|---------|
-| DB更新の書き方（UPDATE） | `pkg/server/model/hero.go` の `UpdateHeroName()` |
+| DB更新の書き方（UPDATE） | `pkg/server/repository/hero.go` の `UpdateName()` |
 | ハンドラーの書き方 | `pkg/server/handler/hero.go` の `UpdateName()` |
 | ルーティングの追加 | `pkg/server/handler/setting.go` |
