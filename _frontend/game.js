@@ -39,18 +39,21 @@ const STAGE_ICONS = {
 };
 
 // ---- Go 経験者向けチャレンジ（ステージ5クリア後に表示）----
+// type: 'stage' → ステージセクションに表示、'task' → タスクセクションに表示
 const ADVANCED_CHALLENGES = [
   {
     lv: 'Lv6',
-    title: 'テストを書いてバグを見つける',
-    hint: '症状: ボスドラゴンの攻撃を受けてもHPが1残って死なない。\n\npkg/server/service/battle_test.go にテストケースを追加して ApplyDamage のバグを発見しよう。\n\nコマンド:\ngo test ./pkg/server/service/ -run TestApplyDamage -v',
-    action: null,
-  },
-  {
-    lv: 'Lv7',
     title: '封印を並列に解いてボスと戦う',
     hint: '症状: このカードをクリックすると封印解除を試みます。\n5秒後に失敗したら、pkg/server/service/seal.go の BreakAllSeals を goroutine + sync.WaitGroup で並列化しよう。',
     action: 'challenge',
+    type: 'stage',
+  },
+  {
+    lv: 'Lv7',
+    title: 'テストを書いてバグを見つける',
+    hint: '症状: ボスドラゴンの攻撃を受けてもHPが1残って死なない。\n\npkg/server/service/battle_test.go にテストケースを追加して ApplyDamage のバグを発見しよう。\n\nコマンド:\ngo test ./pkg/server/service/ -run TestApplyDamage -v',
+    action: null,
+    type: 'task',
   },
 ];
 
@@ -89,7 +92,7 @@ const STAGE_HINTS = {
 
 // addServerLog writes to all visible server log panels.
 function addServerLog(method, path, responseData) {
-  const panels = ['server-log-content', 'server-log-battle', 'server-log-result'];
+  const panels = ['server-log-content', 'server-log-battle', 'server-log-result', 'server-log-challenge'];
   const resText = JSON.stringify(responseData);
 
   panels.forEach(id => {
@@ -201,9 +204,21 @@ async function loadHeroAndStages() {
   }
 }
 
+function makeSectionHeader(label, cssClass) {
+  const el = document.createElement('div');
+  el.className = 'section-header ' + cssClass;
+  el.textContent = label;
+  return el;
+}
+
 function renderStageList(stages) {
   const container = document.getElementById('stage-list');
   container.innerHTML = '';
+
+  const cleared = hero && hero.experience >= 500;
+
+  // ---- ステージ section ----
+  container.appendChild(makeSectionHeader('ステージ', 'stage-section-header'));
 
   stages.forEach(stage => {
     const card = document.createElement('div');
@@ -230,19 +245,33 @@ function renderStageList(stages) {
     container.appendChild(card);
   });
 
-  // Go 経験者向けチャレンジ（常に表示。ステージ5クリア前はロック）
-  const cleared = hero && hero.experience >= 500;
-
-  const sep = document.createElement('div');
-  sep.style.cssText = 'text-align:center; color:#7a5a2a; font-size:11px; padding:8px 0 4px;';
-  sep.textContent = '── Go 経験者向けチャレンジ ──';
-  container.appendChild(sep);
-
-  ADVANCED_CHALLENGES.forEach(item => {
+  // Lv6 は type:'stage' なのでステージセクションに続けて表示
+  ADVANCED_CHALLENGES.filter(c => c.type === 'stage').forEach(item => {
     const card = document.createElement('div');
     card.className = 'stage-card' + (cleared ? '' : ' locked');
     card.innerHTML = `
-      <img class="stage-icon" src="/images/icons/training-sprout.png" alt="" />
+      <img class="stage-icon" src="/images/icons/stage-alert.png" alt="" />
+      <div class="stage-info">
+        <div class="stage-lv">${item.lv}</div>
+        <div class="stage-name">${item.title}</div>
+        <div class="stage-req">必要EXP: 500</div>
+      </div>
+      <div class="stage-arrow">${cleared ? '▶' : '🔒'}</div>
+    `;
+    if (cleared) {
+      card.onclick = () => item.action === 'challenge' ? tryChallenge(item) : showAdvancedHint(item);
+    }
+    container.appendChild(card);
+  });
+
+  // ---- タスク section ----
+  container.appendChild(makeSectionHeader('タスク', 'task-section-header'));
+
+  ADVANCED_CHALLENGES.filter(c => c.type === 'task').forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'task-card' + (cleared ? '' : ' locked');
+    card.innerHTML = `
+      <img class="stage-icon" src="/images/icons/training-book.png" alt="" />
       <div class="stage-info">
         <div class="stage-lv">${item.lv}</div>
         <div class="stage-name">${item.title}</div>
@@ -251,7 +280,7 @@ function renderStageList(stages) {
       <div class="stage-arrow">${cleared ? '？' : '🔒'}</div>
     `;
     if (cleared) {
-      card.onclick = () => item.action === 'challenge' ? tryChallenge(item) : showAdvancedHint(item);
+      card.onclick = () => showAdvancedHint(item);
     }
     container.appendChild(card);
   });
@@ -433,21 +462,66 @@ function showHelp() {
   document.getElementById('help-modal').style.display = 'flex';
 }
 
+const SEAL_NAMES = ['炎の封印', '水の封印', '風の封印', '大地の封印', '闇の封印'];
+
 async function tryChallenge(item) {
-  document.getElementById('modal-lv').textContent = item.lv;
-  document.getElementById('modal-title').textContent = '封印を解いています...';
-  document.getElementById('modal-hint').textContent = '';
-  document.getElementById('help-modal').style.display = 'flex';
+  // チャレンジ画面に遷移
+  showScreen('challenge-screen');
+  document.getElementById('challenge-header').textContent = '封印解除チャレンジ';
+  document.getElementById('challenge-dialog').textContent = '封印を解いています...';
+  document.getElementById('challenge-back-btn').disabled = true;
+
+  // 封印リストを初期化（全て「解除中...」＋点滅アニメーション）
+  const sealListEl = document.getElementById('seal-list');
+  sealListEl.innerHTML = '';
+  SEAL_NAMES.forEach(name => {
+    const el = document.createElement('div');
+    el.className = 'seal-item pending';
+    el.innerHTML = `<span>${name}</span><span class="seal-status">解除中...</span>`;
+    sealListEl.appendChild(el);
+  });
+
+  // 経過秒数カウンター
+  const dialogEl = document.getElementById('challenge-dialog');
+  let elapsed = 0;
+  const timer = setInterval(() => {
+    elapsed++;
+    dialogEl.textContent = `封印を解いています... ${elapsed}秒`;
+  }, 1000);
+
+  // フロント側タイムアウト（6秒で中断）
+  const controller = new AbortController();
+  const abort = setTimeout(() => controller.abort(), 6000);
+
   try {
-    const result = await apiFetch('/stages/5/challenge', { method: 'POST' });
-    document.getElementById('modal-title').textContent = 'クリア！';
-    document.getElementById('modal-hint').textContent =
-      result.seals.join('\n') + '\n\n' + result.message;
+    const result = await apiFetch('/stages/5/challenge', { method: 'POST', signal: controller.signal });
+    clearTimeout(abort);
+    clearInterval(timer);
+
+    // 成功: アニメーションを止めて1つずつ「解いた！」に更新
+    const items = sealListEl.querySelectorAll('.seal-item');
+    for (let i = 0; i < items.length; i++) {
+      await sleep(150);
+      items[i].classList.remove('pending');
+      items[i].classList.add('done');
+      items[i].querySelector('.seal-status').textContent = '解いた！';
+    }
+    document.getElementById('challenge-dialog').textContent = result.message || 'すべての封印を解いた！ボスドラゴンに挑もう！';
+
   } catch (e) {
-    document.getElementById('modal-title').textContent = '封印解除に失敗！';
-    document.getElementById('modal-hint').textContent =
-      'pkg/server/service/seal.go の BreakAllSeals を goroutine + sync.WaitGroup で並列化しよう。\n順番に解くと5秒かかるが、並列にすると約1秒で完了する。';
+    clearTimeout(abort);
+    clearInterval(timer);
+    // 失敗: アニメーションを止めて全封印を「失敗」に
+    sealListEl.querySelectorAll('.seal-item').forEach(el => {
+      el.classList.remove('pending');
+      el.classList.add('failed');
+      el.querySelector('.seal-status').textContent = '失敗';
+    });
+    document.getElementById('challenge-dialog').textContent =
+      '封印解除に失敗！pkg/server/service/seal.go の BreakAllSeals を goroutine + sync.WaitGroup で並列化しよう。';
   }
+
+  document.getElementById('challenge-back-btn').disabled = false;
 }
 
 function showAdvancedHint(item) {

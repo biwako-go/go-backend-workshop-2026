@@ -185,6 +185,46 @@
     </div>
   </div>
 
+  <!-- ========== CHALLENGE SCREEN ========== -->
+  <div id="challenge-screen" class="screen">
+    <div class="challenge-layout">
+
+      <!-- Main Area -->
+      <div class="challenge-field-wrap">
+        <div class="challenge-field">
+          <div class="challenge-header" id="challenge-header">封印解除チャレンジ</div>
+          <div class="challenge-condition">5つの封印を <strong>3秒以内</strong> にすべて解け</div>
+          <div class="seal-list" id="seal-list"></div>
+        </div>
+
+        <!-- Dialog box -->
+        <div class="battle-dialog">
+          <div class="dialog-text" id="challenge-dialog">封印の解除を開始する...</div>
+        </div>
+
+        <!-- Command -->
+        <div class="battle-commands" style="grid-template-columns: 1fr;">
+          <button class="cmd-btn back-btn" id="challenge-back-btn" onclick="goToStageSelect()" disabled>
+            <span>もどる</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right: Server Log -->
+      <div class="server-log-panel">
+        <div class="log-resize-handle" onmousedown="startLogResize(event)"></div>
+        <div class="server-log-title">
+          <span>SERVER LOG</span>
+          <div class="log-font-controls">
+            <button onclick="changeLogFontSize(-1)">−</button>
+            <button onclick="changeLogFontSize(1)">＋</button>
+          </div>
+        </div>
+        <div class="server-log-content" id="server-log-challenge"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ========== HELP MODAL ========== -->
   <div id="help-modal" class="modal-overlay" style="display:none" onclick="closeHelp(event)">
     <div class="modal-box">
