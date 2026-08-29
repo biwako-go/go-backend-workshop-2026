@@ -1,6 +1,6 @@
 # Gopher Slayer — Optional Challenges
 
-Lv1〜Lv5 のワークショップタスクをクリアしたら、以下の中から好きなものに挑戦しよう。
+本編のワークショップタスク（Tasks.md の Lv1〜Lv25）をクリアしたら、以下の中から好きなものに挑戦しよう。
 すべて任意。興味・レベルに合わせて自由に選んでください。
 
 難易度の目安：★ = 30分〜1時間 / ★★★ = 半日 / ★★★★★ = 1日以上
@@ -12,7 +12,6 @@ Lv1〜Lv5 のワークショップタスクをクリアしたら、以下の中�
 - [テスト](#テスト)
 - [アーキテクチャ・設計](#アーキテクチャ設計)
 - [データベース](#データベース)
-- [Go 言語深掘り](#go-言語深掘り)
 - [API 品質・ミドルウェア](#api-品質ミドルウェア)
 - [可観測性](#可観測性)
 - [新機能追加](#新機能追加)
@@ -207,27 +206,6 @@ Feature: Battle
 1. TestGacha_ShouldReturnWeapon を書く（まだ実装なし → Red）
 2. Gacha() を最小限実装して通す（Green）
 3. リファクタリング（Refactor）
-```
-
----
-
-### T-9: Race Condition を検出して修正する
-
-**難易度:** ★★★
-**学べること:** データ競合, `-race` フラグ, `sync.Mutex` の使い方
-
-**やること:**
-
-以下のバグを `battle_service.go` に仕込んでから `-race` で検出し、修正する。
-
-```go
-// バグ: goroutine から共有変数に mutex なしでアクセス
-var totalDamage int
-go func() { totalDamage += damage }()
-```
-
-```bash
-go test -race ./...
 ```
 
 ---
@@ -508,187 +486,6 @@ ALTER TABLE heroes ADD COLUMN weapon_id INT NULL REFERENCES weapons(id);
 ```
 
 武器装備で攻撃力が変わるよう `battle_service.go` を修正し、`GET /api/hero` のレスポンスに武器情報を含める。
-
----
-
-## Go 言語深掘り
-
-### G-1: context.Context を全層に伝播させる
-
-**難易度:** ★★★
-**学べること:** context の役割（タイムアウト・キャンセル・値の伝播）, Go の慣用句
-
-**現状の問題:**
-
-どの関数も `context.Context` を受け取っていないため、リクエストキャンセル時に DB クエリが止まらない。
-
-**やること:**
-
-全関数のシグネチャに `ctx context.Context` を第1引数として追加し、DB 呼び出しに渡す。
-
-```go
-// 変更前
-func (r *HeroRepository) GetHero() (*model.Hero, error)
-
-// 変更後
-func (r *HeroRepository) GetHero(ctx context.Context) (*model.Hero, error) {
-    row := r.db.QueryRowContext(ctx, `SELECT ...`)
-}
-```
-
----
-
-### G-2: Goroutine と errgroup で並列処理する
-
-**難易度:** ★★★
-**学べること:** `sync/errgroup`, goroutine のエラーハンドリング, 並列処理のパターン
-
-**やること:**
-
-`GetAllStages` でヒーロー情報とステージ一覧を並列取得する。
-
-```go
-import "golang.org/x/sync/errgroup"
-
-func (s *StageService) GetAllStages(ctx context.Context) ([]*model.Stage, error) {
-    g, ctx := errgroup.WithContext(ctx)
-
-    var hero *model.Hero
-    var stages []*model.Stage
-
-    g.Go(func() error {
-        var err error
-        hero, err = s.heroRepo.GetHero(ctx)
-        return err
-    })
-    g.Go(func() error {
-        var err error
-        stages, err = s.stageRepo.GetAllStages(ctx)
-        return err
-    })
-
-    if err := g.Wait(); err != nil {
-        return nil, err
-    }
-    // ... IsUnlocked の計算
-}
-```
-
----
-
-### G-3: Graceful Shutdown を実装する
-
-**難易度:** ★★
-**学べること:** OS シグナルのハンドリング, 進行中リクエストの保護, `context` との連携
-
-**現状の問題:**
-
-`Ctrl+C` で即終了するため、処理中のバトルリクエストが強制切断される。
-
-**やること:**
-
-`main.go` にシグナルハンドリングを追加する。
-
-```go
-quit := make(chan os.Signal, 1)
-signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-<-quit
-
-ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-defer cancel()
-if err := e.Shutdown(ctx); err != nil {
-    e.Logger.Fatal(err)
-}
-```
-
----
-
-### G-4: 構造化ログ（slog）に置き換える
-
-**難易度:** ★★
-**学べること:** 構造化ログの利点, Go 1.21 標準の `log/slog`, ログレベル管理
-
-**現状の問題:**
-
-`log.Printf` はテキスト形式のためログ集計ツールで検索しにくい。
-
-**やること:**
-
-```go
-// 変更前
-log.Printf("Database not ready, retrying... (%d/10)", i)
-
-// 変更後
-slog.Warn("database not ready, retrying",
-    "attempt", i,
-    "max", 10,
-)
-```
-
-Echo のミドルウェアも `slog` を使うカスタムロガーに差し替え、リクエストIDをすべてのログに含める。
-
----
-
-### G-5: pprof でプロファイリングする
-
-**難易度:** ★★★
-**学べること:** CPU/Memory プロファイルの取り方, ボトルネックの発見, Flame Graph の読み方
-
-**やること:**
-
-1. `main.go` に pprof エンドポイントを追加する
-
-```go
-import _ "net/http/pprof"
-go http.ListenAndServe(":6060", nil)
-```
-
-2. 負荷をかけながらプロファイルを取得する
-
-```bash
-go tool pprof http://localhost:6060/debug/pprof/profile?seconds=30
-# > web  でフレームグラフを表示
-```
-
----
-
-### G-6: embed で静的ファイルをバイナリに埋め込む
-
-**難易度:** ★★
-**学べること:** `//go:embed` ディレクティブ, 単一バイナリ配布のメリット
-
-**やること:**
-
-`frontend/` と `images/` をバイナリに埋め込み、ファイルなしで動作するようにする。
-
-```go
-import "embed"
-
-//go:embed frontend
-var frontendFS embed.FS
-
-//go:embed images
-var imagesFS embed.FS
-```
-
----
-
-### G-7: コネクションプールを最適化する
-
-**難易度:** ★★
-**学べること:** `database/sql` の接続管理, `SetMaxOpenConns` の意味, ベンチマークで効果確認
-
-**やること:**
-
-`connectDB` 関数にプール設定を追加し、ベンチマークで違いを計測する。
-
-```go
-db.SetMaxOpenConns(25)
-db.SetMaxIdleConns(5)
-db.SetConnMaxLifetime(5 * time.Minute)
-```
-
-`go test -bench=. -benchmem` でリクエストのスループットを比較する。
 
 ---
 
@@ -1149,7 +946,7 @@ erDiagram
 
 ## アンチパターン修正
 
-既存の Lv1〜Lv5 形式の「バグを直す」タスク。コードに仕込まれたバグを自力で発見して修正する。
+本編と同じ「バグを直す」形式のタスク。コードに仕込まれたバグを自力で発見して修正する。
 
 ### Bug-1: N+1 クエリ
 
@@ -1175,35 +972,11 @@ erDiagram
 
 ---
 
-### Bug-4: Goroutine リーク
-
-**症状:** サーバーのメモリ使用量が時間とともに増え続ける。
-**仕込み場所:** `go func()` 内で channel を永遠に待つ処理で `cancel` を呼ばない
-**学べること:** goroutine のライフサイクル管理, `context.WithCancel` の必要性
-
----
-
 ### Bug-5: SQL Injection
 
 **症状:** 特定の入力値でデータが漏洩する。
 **仕込み場所:** `fmt.Sprintf` でクエリを組み立て（プレースホルダーなし）
 **学べること:** SQL インジェクションの仕組み, prepared statement の重要性
-
----
-
-### Bug-6: データ競合（Race Condition）
-
-**症状:** 並列リクエスト時に稀におかしな値が返る。`-race` フラグで検出できる。
-**仕込み場所:** `map` への goroutine からの並行書き込み（`sync.Mutex` なし）
-**学べること:** データ競合とは何か, `go test -race` の使い方
-
----
-
-### Bug-7: nil ポインタ参照
-
-**症状:** DB にデータがない状態でAPIを叩くと panic でサーバーがクラッシュする。
-**仕込み場所:** `row.Scan` の `sql.ErrNoRows` チェックを削除し、`nil` の `hero` をそのまま返す
-**学べること:** nil チェックの重要性, `errors.Is(err, sql.ErrNoRows)` パターン
 
 ---
 
@@ -1243,7 +1016,6 @@ erDiagram
 | T-6 Golden File       | [ ] | |
 | T-7 BDD               | [ ] | |
 | T-8 TDD               | [ ] | |
-| T-9 Race Condition    | [ ] | |
 | A-1 Service 依存整理  | [ ] | |
 | A-2 Transaction       | [ ] | |
 | A-3 Clean Architecture| [ ] | |
@@ -1255,13 +1027,6 @@ erDiagram
 | D-3 Migration         | [ ] | |
 | D-4 Redis             | [ ] | |
 | D-5 DB 変更           | [ ] | |
-| G-1 context 伝播      | [ ] | |
-| G-2 errgroup          | [ ] | |
-| G-3 Graceful Shutdown | [ ] | |
-| G-4 slog              | [ ] | |
-| G-5 pprof             | [ ] | |
-| G-6 embed             | [ ] | |
-| G-7 コネクションプール | [ ] | |
 | M-1 エラー統一        | [ ] | |
 | M-2 バリデーション    | [ ] | |
 | M-3 JWT 認証          | [ ] | |
@@ -1285,10 +1050,7 @@ erDiagram
 | Bug-1 N+1             | [ ] | |
 | Bug-2 エラー握り潰し  | [ ] | |
 | Bug-3 context なし    | [ ] | |
-| Bug-4 Goroutine リーク| [ ] | |
 | Bug-5 SQL Injection   | [ ] | |
-| Bug-6 Race Condition  | [ ] | |
-| Bug-7 nil 参照        | [ ] | |
 | Bug-8 循環 import     | [ ] | |
 | Bug-9 TX 不整合       | [ ] | |
 | Bug-10 ログ漏洩       | [ ] | |

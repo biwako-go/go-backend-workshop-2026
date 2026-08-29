@@ -511,6 +511,30 @@ html, body {
   top: 2%;
 }
 
+/* Legend line: 古文書の言い伝え (Lv19 sync.Once 観測用) */
+.legend-line {
+  font-size: 11px;
+  font-style: italic;
+  color: #7a5c2e;
+  padding: 4px 8px;
+  border-bottom: 1px dashed #c9b07a;
+  margin-bottom: 6px;
+}
+
+/* Server memory badge: top-right corner (Lv9 メモリリーク観測用) */
+.server-mem-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(30, 30, 40, 0.85);
+  color: #9fe8a0;
+  border: 1px solid #5a3e1b;
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: monospace;
+}
+
 /* Enemy status box: top-left corner (2× size) */
 .battle-enemy-info {
   position: absolute;

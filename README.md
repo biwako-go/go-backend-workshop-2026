@@ -16,6 +16,11 @@ db/init/                 # DBの初期化SQL
 _frontend/               # ゲーム画面（参加者は触らない）
 ```
 
+## 前提
+
+- **Go 1.25 以上**（Lv23 の `testing/synctest` に必要）
+- Docker
+
 ## 起動
 
 ```bash

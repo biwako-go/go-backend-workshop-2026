@@ -39,6 +39,13 @@ func (h *StageHandler) GetStages(c echo.Context) error {
 	return c.JSON(http.StatusOK, stages)
 }
 
+// GetLegend は古文書の言い伝えを返す。
+// ステージ選択画面を開くたびに呼ばれる（Lv19: 毎回800msかかるのが症状）。
+// GET /api/legend
+func (h *StageHandler) GetLegend(c echo.Context) error {
+	return c.JSON(http.StatusOK, map[string]string{"legend": service.DecodeAncientText()})
+}
+
 // GetEnemies は指定ステージの敵一覧を返す。
 // GET /api/stages/:id/enemies
 func (h *StageHandler) GetEnemies(c echo.Context) error {
@@ -88,9 +95,6 @@ func (h *StageHandler) ClearStage(c echo.Context) error {
 	// 4. 経験値をDBに保存する
 	// [Lv2 バグ仕込み箇所]
 	// ここにDBへの保存処理が抜けている
-	if err := h.heroRepo.UpdateExperience(newExp); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "経験値の更新に失敗しました"})
-	}
 
 	return c.JSON(http.StatusOK, service.ClearStageResponse{
 		Message:          fmt.Sprintf("ステージ「%s」クリア！", stage.Name),

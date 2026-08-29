@@ -32,6 +32,30 @@ func (h *BattleHandler) Attack(c echo.Context) error {
 	return c.JSON(http.StatusOK, result)
 }
 
+// SlayHorde はゴブリンの群れを一掃する処理。
+// POST /api/battle/horde
+func (h *BattleHandler) SlayHorde(c echo.Context) error {
+	result := service.SlayHorde(100)
+	return c.JSON(http.StatusOK, result)
+}
+
+// Defuse は呪いの爆弾の解除を試みる処理。
+// POST /api/battle/defuse
+func (h *BattleHandler) Defuse(c echo.Context) error {
+	message := service.DefuseCurse()
+	return c.JSON(http.StatusOK, map[string]string{"message": message})
+}
+
+// InterruptCast はボスの詠唱の中断を試みる処理。
+// POST /api/battle/interrupt
+func (h *BattleHandler) InterruptCast(c echo.Context) error {
+	message, interrupted := service.InterruptCast()
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message":     message,
+		"interrupted": interrupted,
+	})
+}
+
 // EnemyAttack は敵がヒーローを攻撃する処理。
 // サーバー側でダメージと新しいHP（ApplyDamage適用後）を計算して返す。
 // POST /api/battle/enemy-attack

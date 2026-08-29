@@ -64,6 +64,8 @@
       <!-- Center: Stage List -->
       <div class="stage-list-panel">
         <div class="panel-title">ステージ選択</div>
+        <!-- 古文書の言い伝え（Lv19: 表示が毎回遅いのが症状） -->
+        <div class="legend-line" id="legend-line">古文書を解読中……</div>
         <div class="stage-list" id="stage-list">
           <p class="loading-text">Loading...</p>
         </div>
@@ -104,6 +106,9 @@
 
           <!-- Enemy sprite (right dirt circle) -->
           <img class="battle-enemy-sprite" id="enemy-sprite" src="" alt="enemy" />
+
+          <!-- Server memory badge (Lv9: 戦うほど増えたら怪しい) -->
+          <div class="server-mem-badge">サーバーメモリ: <span id="server-mem">--</span> MB</div>
 
           <!-- Hero sprite (left dirt circle) -->
           <img class="battle-hero-sprite" src="/images/gopher-enemies/gopher-shigaraki-back.png" alt="hero" />
@@ -193,7 +198,7 @@
       <div class="challenge-field-wrap">
         <div class="challenge-field">
           <div class="challenge-header" id="challenge-header">封印解除チャレンジ</div>
-          <div class="challenge-condition">5つの封印を <strong>3秒以内</strong> にすべて解け</div>
+          <div class="challenge-condition" id="challenge-condition">5つの封印を <strong>3秒以内</strong> にすべて解け</div>
           <div class="seal-list" id="seal-list"></div>
         </div>
 

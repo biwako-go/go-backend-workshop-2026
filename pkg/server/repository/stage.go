@@ -37,6 +37,11 @@ func (r *StageRepository) GetAll() ([]*service.Stage, error) {
 }
 
 // GetByID は指定IDのステージを取得する。
+//
+// [Lv10 バグ仕込み箇所]
+// エラーを握りつぶして nil を返しているため、存在しないステージIDを渡すと
+// 呼び出し側が nil ポインタを参照して panic する。
+// エラーをそのまま返すのが正解（sql.ErrNoRows が「見つからない」を表す）。
 func (r *StageRepository) GetByID(id int) (*service.Stage, error) {
 	s := &service.Stage{}
 	row := r.db.QueryRow(`
@@ -45,7 +50,7 @@ func (r *StageRepository) GetByID(id int) (*service.Stage, error) {
 	`, id)
 	err := row.Scan(&s.ID, &s.Name, &s.Description, &s.RequiredExperience, &s.OrderNum)
 	if err != nil {
-		return nil, err
+		return nil, nil // ← エラーを握りつぶしている
 	}
 	return s, nil
 }
