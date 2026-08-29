@@ -1,6 +1,7 @@
 # Gopher Slayer
 
 Go バックエンド開発を体験するワークショップ用ゲームです。
+全体の構造は [ARCHITECTURE.md](ARCHITECTURE.md) を参照してください。
 タスクは [Tasks.md](Tasks.md) を参照してください。
 
 ## ディレクトリ構成
@@ -25,10 +26,10 @@ _frontend/               # ゲーム画面（参加者は触らない）
 
 ```bash
 # air のインストール（初回のみ）
-go install github.com/air-verse/air@latest
+make setup
 
 # DB 起動
-docker compose up -d db
+make up
 
 # アプリ起動（ファイル保存で自動リロード）
 make dev
@@ -42,10 +43,18 @@ http://localhost:8080 でゲームが開きます。
 # アプリ: Ctrl+C
 
 # DB を止める
-docker compose down
+make down
 
 # DB のデータごと消す（リセット）
-docker compose down -v
+make reset
+```
+
+## その他のコマンド
+
+```bash
+make test    # テスト実行
+make race    # データ競合の検出（Lv8）
+make bench   # ベンチマーク（Lv13）
 ```
 
 ## トラブルシューティング
@@ -56,8 +65,8 @@ DB の起動が間に合っていない可能性があります。少し待っ�
 それでも失敗する場合はコンテナをリセットします。
 
 ```bash
-docker compose down -v
-docker compose up -d db
+make reset
+make up
 ```
 
 **ポート 3307 が使用中**

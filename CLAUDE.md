@@ -83,6 +83,7 @@ handler → service → repository → DB
 ├── docker-compose.yaml
 ├── Makefile
 ├── README.md                  # 起動方法のみ
+├── ARCHITECTURE.md            # 全体構造・API一覧・ER図（参加者向けの地図）
 ├── Tasks.md                   # ワークショップタスク（参加者向け）
 ├── ANSWER.md                  # 答え合わせ（講師向け）
 └── CHALLENGES.md              # 発展課題一覧
