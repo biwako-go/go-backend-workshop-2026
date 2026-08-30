@@ -55,7 +55,6 @@ var criticalRNG = rand.New(rand.NewSource(1))
 
 // RollCritical は攻撃がクリティカルヒット（4分の1の確率）かどうかを判定する。
 func RollCritical() bool {
-	criticalRolls++ // 予言者（Prophecy）の判定用カウンタ。この行は残すこと
 	return criticalRNG.Intn(4) == 0
 }
 

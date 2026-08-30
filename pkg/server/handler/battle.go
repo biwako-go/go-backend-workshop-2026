@@ -77,7 +77,7 @@ func (h *BattleHandler) Prophecy(c echo.Context) error {
 	predicted, actual, allMatch := service.Prophecy()
 	message := "予言が外れた！会心の行方は誰にも読めない！"
 	if allMatch {
-		message = "予言者「すべてお見通しだ」——12回の会心をすべて的中された！乱数が予測可能になっている…"
+		message = "予言者「すべてお見通しだ」——会心の行方をすべて的中された！乱数が予測可能になっている…"
 	}
 	return c.JSON(http.StatusOK, map[string]interface{}{
 		"predicted": predicted,
@@ -178,11 +178,13 @@ func (h *BattleHandler) Formation(c echo.Context) error {
 	})
 }
 
-// Vault は宝物庫を15回覗いて、DB接続（扉）が閉じられているか検分する処理（Lv15の判定用）。
+// Vault は宝物庫を8回覗いて、DB接続（扉）が閉じられているか検分する処理（Lv15の判定用）。
+// バグ状態では覗くたびに接続がリークするため、回数は8回に抑えてある
+// （再挑戦を繰り返すとMySQLの接続上限に近づき、ゲーム全体が不調になる。その場合はサーバー再起動で回復）。
 // POST /api/battle/vault
 func (h *BattleHandler) Vault(c echo.Context) error {
 	before := h.enemyRepo.OpenConnections()
-	for i := 0; i < 15; i++ {
+	for i := 0; i < 8; i++ {
 		if _, err := h.enemyRepo.PeekVault(); err != nil {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
 		}

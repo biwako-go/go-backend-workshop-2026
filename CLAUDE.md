@@ -107,7 +107,7 @@ handler → service → repository → DB
 | Lv12 | `pkg/server/service/mirage.go` の `ChallengeMirage` | スライス代入で配列を共有し本体まで弱体化（slices.Clone が正解）。判定 `/battle/mirage` |
 | Lv13 | `pkg/server/service/formation.go` の `FormBattleLine` | map の range 順序がランダムで隊列が毎回変わる（slices.Sort が正解）。判定 `/battle/formation` |
 | Lv14 | `pkg/server/repository/stage.go` の `GetByID` | エラー握りつぶしで `nil, nil` を返す → 呼び出し側で nil panic（`return nil, err` が正解） |
-| Lv15 | `pkg/server/repository/enemy.go` の `PeekVault` | rows.Close 忘れでDB接続がリーク（defer rows.Close() が正解）。判定 `/battle/vault`（db.Stats比較） |
+| Lv15 | `pkg/server/repository/enemy.go` の `PeekVault` | rows.Close 忘れでDB接続がリーク（defer rows.Close() が正解）。判定 `/battle/vault`（8回覗いて db.Stats 比較。バグ状態の連打でMySQL接続が枯渇しうるため回数は8に抑制） |
 | Lv16 | `pkg/server/service/seal.go` の `BreakAllSeals` | 封印を順番に解く（goroutine + WaitGroup で並列化が正解） |
 | Lv17 | `pkg/server/service/horde.go` の `SlayHorde` | mutex なしで `killCount` に並行書き込み（sync.Mutex が正解） |
 | Lv18 | `pkg/server/service/spell.go` の `InterruptCast` | 詠唱channelを10秒待つだけ（select + time.After で2秒タイムアウトが正解） |
@@ -120,7 +120,7 @@ handler → service → repository → DB
 | Lv25 | `pkg/server/service/curse.go` の `DefuseCurse` | goroutine 内で panic → サーバーごと落ちる（defer + recover が正解） |
 | Lv26 | `pkg/server/service/battle.go` の `BuildBattleReport` | `+=` の文字列連結（strings.Builder 化が正解）。判定 `/battle/report`（40000行を1秒以内） |
 | Lv27 | `pkg/server/service/ancient.go` の `DecodeAncientText` | 毎回800msの解読をやり直す（sync.Once が正解）。判定 `/api/legend/speedread` |
-| Lv28 | `pkg/server/service/battle.go` の `RollCritical` | 固定シードの math/rand v1（math/rand/v2 への移行が正解）。判定 `/battle/prophecy`（`service/prophecy.go` が固定シード列を再現、`criticalRolls++` は判定用に残す） |
+| Lv28 | `pkg/server/service/battle.go` の `RollCritical` | 固定シードの math/rand v1（math/rand/v2 への移行が正解）。判定 `/battle/prophecy`（`service/prophecy.go` が固定シード列との部分一致を検査。判定回数のカウント不要） |
 
 観測用API（正しいコードで、参加者は変更しない）: `GET /api/debug/memory`（Lv23 メモリ / Lv22 goroutine 数）— `pkg/server/handler/debug.go`。
 判定用コード（変更しない）: `pkg/server/service/prophecy.go`（Lv28）、各 `/battle/*` 判定ハンドラー（`handler/battle.go`）、`GET /api/mock/guild`（Lv20の相手役）。

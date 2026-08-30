@@ -119,7 +119,7 @@ const ADVANCED_CHALLENGES = [
     title: '宝物庫の扉を閉めろ',
     hint: '症状: 宝物庫を覗くたびにDB接続が開きっぱなしになり、どんどん溜まっていく。\npkg/server/repository/enemy.go の PeekVault — rows.Close() が抜けている。\nQuery の直後に defer rows.Close() を入れるのが Go の作法。',
     action: 'vault',
-    condition: '宝物庫を15回覗いても扉（DB接続）が <strong>閉まっている</strong> こと',
+    condition: '宝物庫を8回覗いても扉（DB接続）が <strong>閉まっている</strong> こと',
     img: '/images/gopher-enemies/gopher-demon.png',
   },
   {
@@ -221,7 +221,7 @@ const ADVANCED_CHALLENGES = [
   {
     lv: 'Lv28',
     title: '予言者に打ち勝て',
-    hint: '症状: 予言者に会心の一撃の行方をすべて予知されてしまう（乱数が予測可能＝チート可能）。\npkg/server/service/battle.go の RollCritical が古い math/rand を固定シードで使っている。\nGo 1.22 の math/rand/v2 に移行しよう（rand.IntN(4) == 0 と書ける。criticalRolls++ の行は判定用なので残す）。',
+    hint: '症状: 予言者に会心の一撃の行方をすべて予知されてしまう（乱数が予測可能＝チート可能）。\npkg/server/service/battle.go の RollCritical が古い math/rand を固定シードで使っている。\nGo 1.22 の math/rand/v2 に移行しよう（criticalRNG 変数を消して rand.IntN(4) == 0 と書くだけ）。',
     action: 'prophecy',
     condition: '予言者に会心の行方を <strong>読まれない</strong> こと（12回の会心予知と勝負）',
     img: '/images/gopher-enemies/gopher-ice.png',
@@ -855,7 +855,7 @@ function setChallengeRow(el, state, statusText) {
 
 // チャレンジを終了してダイアログを更新する。
 // 進捗リストの結果（done/failed）から勝敗を判定し、敵の撃破/激怒演出を出す
-function finishChallenge(message) {
+async function finishChallenge(message) {
   document.getElementById('challenge-back-btn').disabled = false;
   document.getElementById('challenge-attack-btn').disabled = false; // 直したらもう一度たたかえる
   const sprite = document.getElementById('challenge-enemy-sprite');
@@ -877,13 +877,14 @@ function finishChallenge(message) {
       updateChallengeHP(0, db.max_hp);
       nameEl.textContent = db.name;
       prefix = `${db.name} をたおした！ `;
-      // 初回撃破ならEXP+100（次のチャレンジが解放される）
-      if (hero && hero.experience < db.unlock_exp + 100) {
-        prefix += 'EXP +100！ ';
-        awardChallengeExp(currentChallengeItem);
-      }
     }
     setTimeout(() => sprite.classList.add('defeated'), 500); // HPが削れてから倒れる
+    // 初回撃破ならEXP+100（次のチャレンジが解放される）。
+    // 付与がDBに保存されたのを確認してから表示する（Lv2と同じ「表示と保存のズレ」を作らないため）
+    if (db && hero && hero.experience < db.unlock_exp + 100) {
+      const awarded = await awardChallengeExp(currentChallengeItem);
+      prefix += awarded ? 'EXP +100！ ' : '⚠️ EXPの付与に失敗（もう一度たたかうと再付与される） ';
+    }
   }
   document.getElementById('challenge-dialog').textContent = prefix + message;
 }
@@ -906,8 +907,9 @@ async function awardChallengeExp(item) {
     });
     hero = await apiFetch('/hero');
     updateCharCard(hero);
+    return hero.experience >= target; // DBに保存されたことを確認できたら true
   } catch (e) {
-    // 付与に失敗しても演出はそのまま続行する
+    return false;
   }
 }
 
@@ -1023,9 +1025,13 @@ async function tryPhantomChallenge(item) {
     setChallengeRow(row, 'failed', '異常');
     finishChallenge('存在しないステージがクリアできてしまった…？サーバーの実装を確認しよう。');
   } catch (e) {
-    if (e.message.includes('ステージが見つかりません')) {
+    // panic（500 Internal Server Error）なら失敗。それ以外のエラー応答なら
+    // 「正しくエラーを返せている」ので成功（メッセージの文言は問わない）
+    const panicked = e.message.includes('Internal Server Error') || e.message.includes('HTTP 5');
+    const noResponse = e.message.includes('応答なし') || e.message.includes('タイムアウト');
+    if (!panicked && !noResponse) {
       setChallengeRow(row, 'done', '正常なエラー');
-      finishChallenge('番人は静かに首を振った。「そのステージはまだ存在しない」——サーバーは正しくエラーを返した！');
+      finishChallenge(`番人は静かに首を振った。「そのステージはまだ存在しない」——サーバーは正しくエラーを返した！（${e.message}）`);
     } else {
       setChallengeRow(row, 'failed', 'panic!');
       finishChallenge(
@@ -1402,7 +1408,7 @@ async function tryVaultChallenge(item) {
       finishChallenge('扉はすべて閉まっている！盗賊の逃げ道を断った！');
     } else {
       setChallengeRow(row, 'failed', `+${result.leaked}`);
-      finishChallenge(`15回覗いたら扉が ${result.leaked} 枚も開きっぱなしだ…！pkg/server/repository/enemy.go の PeekVault に defer rows.Close() を入れよう。`);
+      finishChallenge(`8回覗いたら扉が ${result.leaked} 枚も開きっぱなしだ…！pkg/server/repository/enemy.go の PeekVault に defer rows.Close() を入れよう。⚠️ リークした接続は戻らないので、再挑戦しすぎてゲームが不調になったら Ctrl+C → make start で再起動。`);
     }
   } catch (e) {
     setChallengeRow(row, 'failed', 'エラー');

@@ -735,23 +735,20 @@ import "math/rand"
 var criticalRNG = rand.New(rand.NewSource(1)) // 固定シード
 
 func RollCritical() bool {
-    criticalRolls++ // 予言者（Prophecy）の判定用カウンタ
     return criticalRNG.Intn(4) == 0
 }
 
-// 修正後（criticalRNG 変数は削除、import を math/rand/v2 に変更。
-// criticalRolls++ は予言者の判定用なので残す）
+// 修正後（criticalRNG 変数は削除、import を math/rand/v2 に変更）
 import "math/rand/v2"
 
 func RollCritical() bool {
-    criticalRolls++
     return rand.IntN(4) == 0
 }
 ```
 
 `math/rand/v2`（Go 1.22）は自動でシードされ、`Seed` 関数自体が存在しない。トップレベルの `rand.IntN` をそのまま使えばよい。
 
-判定の仕組み：`pkg/server/service/prophecy.go`（変更不要）が「固定シード1の math/rand を判定回数ぶん早送りした未来」を予言し、実際の判定12回と突き合わせる。固定シードのままだと全的中（`all_match: true`）、v2 に移行すると予言は外れる。
+判定の仕組み：`pkg/server/service/prophecy.go`（変更不要）が実際の判定40回を引き、その並びが「固定シード1の math/rand が生む列」のどこかの区間と一致するかを調べる。固定シードのままだと必ず一致（`all_match: true`）、v2 に移行すると列が毎回変わるので予言は外れる。
 
 ```bash
 # 修正前は all_match: true、修正後は false
