@@ -22,11 +22,6 @@ func New(db *sql.DB) *echo.Echo {
 	}))
 
 	// フロントエンドと静的ファイルを配信
-	//
-	// [Lv25 バグ仕込み箇所（リファクタ対象）]
-	// 静的ファイルをディスクから読んでいるため、ビルドしたバイナリ単体では
-	// ゲーム画面が表示できない。go:embed で _frontend をバイナリに埋め込み、
-	// どこに持っていっても動く「単一バイナリ」にしよう。
 	e.Static("/", "_frontend")
 	e.Static("/images", "_frontend/images")
 
@@ -41,9 +36,9 @@ func New(db *sql.DB) *echo.Echo {
 	// ハンドラーの生成
 	heroHandler := handler.NewHeroHandler(heroRepo)
 	stageHandler := handler.NewStageHandler(heroRepo, stageRepo, enemyRepo)
-	battleHandler := handler.NewBattleHandler()
+	battleHandler := handler.NewBattleHandler(enemyRepo)
 	questHandler := handler.NewQuestHandler()
-	debugHandler := handler.NewDebugHandler(db)
+	debugHandler := handler.NewDebugHandler()
 
 	handler.RegisterRoutes(e, heroHandler, stageHandler, battleHandler, questHandler, debugHandler)
 

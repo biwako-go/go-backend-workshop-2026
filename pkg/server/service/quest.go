@@ -10,7 +10,7 @@ func investigate(name string) (string, error) {
 
 // GatherQuestReports はギルドの3つの依頼を調査して報告書を集める。
 //
-// [Lv16 バグ仕込み箇所]
+// [Lv19 バグ仕込み箇所]
 // 依頼を1件ずつ順番に調査しているため3秒かかり、ギルドの受付時間（2秒）に
 // 間に合わない。golang.org/x/sync/errgroup で並列化しよう。
 // （どれか1件でも失敗したら全体をエラーにできるのが sync.WaitGroup との違い）

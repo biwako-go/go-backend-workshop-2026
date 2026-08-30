@@ -9,7 +9,10 @@ GoでHTTP APIを作る体験を、ゲームのバグ修正というかたちで�
 
 - **「動かないゲームを直す」** という体験形式にすることで、何を直せばいいかが明確になる
 - コードを読んでバグを見つけ → 修正する → ゲームが動く、という成功体験を繰り返す
-- Lv1〜Lv3は誰でも完走できる難易度。Lv4以降は応用。Lv5〜Lv7はGo経験者向け
+- Lv1〜Lv3は誰でも完走できる難易度。Lv4以降は応用。Lv6〜Lv28はGo経験者向けで、Goの基本の罠→データ構造→DB/エラー→並行処理→性能の順に難易度・依存関係で並べてある
+- レベルはLv1〜Lv28の一本道。Lv6の敵は全ステージクリア（EXP500）で出現し、チャレンジの敵を倒すと **EXP+100**（フロントが `PUT /api/hero/experience` で付与）され次の敵が解放される
+- **全レベルが「敵のHPを削って倒す」ゲームUIでクリア判定できる**（Lv1〜5はステージバトル、Lv6〜28はチャレンジの敵とのバトル：カードクリックでエンカウント→**「たたかう」ボタンが判定トリガー**→成功＝攻撃が通ってHP0、失敗＝敵の反撃演出。失敗後はその場で再度たたかえる）。チャレンジの敵（名前/HP/解放EXP）はDBの `challenge_enemies` にあり `GET /api/challenges` で取得、スプライトは `_frontend/images/gopher-enemies/` のみ使用
+- UIに馴染まない開発体験系のトピック（Graceful Shutdown、slog、context伝播等）はレベルにせず CHALLENGES.md（発展課題）に置く
 
 ## アーキテクチャの方針
 
@@ -50,31 +53,27 @@ handler → service → repository → DB
 │       ├── handler/
 │       │   ├── setting.go     # ルーティング（Lv3バグ箇所）
 │       │   ├── hero.go        # ヒーロー関連API
-│       │   ├── stage.go       # ステージ関連API（Lv2バグ箇所）+ 言い伝えAPI
-│       │   ├── battle.go      # バトル関連API（Lv4, Lv5バグ箇所）
-│       │   ├── quest.go       # ギルド依頼API（Lv16）
-│       │   └── debug.go       # メモリ/goroutine/DBプール観測API（Lv9, Lv17, Lv24観測用・変更不要）
+│       │   ├── stage.go       # ステージ関連API（Lv2バグ箇所）+ 言い伝え/速読/チャレンジ一覧API
+│       │   ├── battle.go      # バトル関連API（Lv4, Lv5バグ箇所）+ 各チャレンジ判定API・モックAPI
+│       │   ├── quest.go       # ギルド依頼API（Lv19）
+│       │   └── debug.go       # メモリ/goroutine観測API（Lv22, Lv23観測用・変更不要）
 │       ├── service/
-│       │   ├── hero.go        # Hero struct + リクエスト型
-│       │   ├── stage.go       # Stage struct + レスポンス型
-│       │   ├── enemy.go       # Enemy struct
-│       │   ├── battle.go      # ダメージ計算（Lv1, Lv5, Lv7, Lv9, Lv13, Lv17, Lv20バグ箇所）
-│       │   ├── battle_test.go # Lv7 スターターテスト
-│       │   ├── report_bench_test.go # Lv13 スターターベンチマーク
-│       │   ├── seal.go        # 封印解除（Lv6バグ箇所）
-│       │   ├── horde.go       # 群れ討伐（Lv8バグ箇所）
-│       │   ├── horde_test.go  # Lv8 race検出用テスト（-race時のみ失敗）
-│       │   ├── spell.go       # 詠唱中断（Lv11, Lv23バグ箇所）
-│       │   ├── spell_test.go  # Lv23 synctest スターター（Skip付き）
-│       │   ├── quest.go       # ギルド依頼調査（Lv16バグ箇所）
-│       │   ├── curse.go       # 呪いの爆弾（Lv18バグ箇所）
-│       │   ├── ancient.go     # 古文書解読（Lv19バグ箇所）
-│       │   ├── mathutil.go    # Max関数群（Lv21リファクタ対象）+ mathutil_test.go
-│       │   └── ranking.go     # 敵ソート/検索（Lv22リファクタ対象）+ ranking_test.go
+│       │   ├── hero.go / stage.go / enemy.go  # struct定義（enemy.go に ChallengeEnemy も）
+│       │   ├── battle.go      # ダメージ計算（Lv1, Lv5, Lv10, Lv22, Lv23, Lv26, Lv28バグ箇所）
+│       │   ├── battle_test.go # Lv10 スターターテスト
+│       │   ├── report_bench_test.go # Lv26 スターターベンチマーク
+│       │   ├── stealth.go     # 偵察（Lv6） / mirror.go 鏡の鎧（Lv7） / loot.go 戦利品（Lv8）
+│       │   ├── titan.go       # 巨神（Lv9） / naming.go 討伐碑（Lv11） / mirage.go 分身（Lv12）
+│       │   ├── formation.go   # 隊列（Lv13） / seal.go 封印（Lv16） / horde.go 群れ（Lv17）
+│       │   ├── horde_test.go  # Lv17 race検出用テスト（-race時のみ失敗）
+│       │   ├── spell.go       # 詠唱中断（Lv18） / quest.go ギルド依頼（Lv19）
+│       │   ├── courier.go     # 伝令（Lv20） / assault.go 突撃（Lv21） / familiar.go 使い魔（Lv24）
+│       │   ├── curse.go       # 呪いの爆弾（Lv25） / ancient.go 古文書（Lv27）
+│       │   └── prophecy.go    # 予言者（Lv28の判定用・変更不要）
 │       └── repository/
 │           ├── hero.go        # HeroRepository（DB操作）
-│           ├── stage.go       # StageRepository（DB操作・Lv10バグ箇所）
-│           └── enemy.go       # EnemyRepository（DB操作）
+│           ├── stage.go       # StageRepository（DB操作・Lv14バグ箇所）
+│           └── enemy.go       # EnemyRepository（DB操作・Lv15バグ箇所 + challenge_enemies取得）
 ├── _frontend/                 # ゲーム画面（参加者は触らない）
 │   ├── index.html
 │   ├── style.css
@@ -98,48 +97,52 @@ handler → service → repository → DB
 | Lv3 | `pkg/server/handler/setting.go` の `RegisterRoutes` | `api.PUT("/hero/hp", ...)` をコメントアウト |
 | Lv4 | `pkg/server/handler/battle.go` の `Attack` | デーモンへのヒーロー攻撃ダメージを反転 |
 | Lv5 | `pkg/server/service/battle.go` の `EnemyAttack`（3s）+ `handler/battle.go` の `EnemyAttack`（5s） | ボスドラゴンのみ `time.Sleep` を追加 |
-| Lv6 [ステージ] | `pkg/server/service/seal.go` の `BreakAllSeals` | 封印を順番に解く（goroutine + WaitGroup で並列化が正解） |
-| Lv7 [タスク] | `pkg/server/service/battle.go` の `ApplyDamage` | 致死ダメージ時に `return 1`（正しくは `return 0`） |
-| Lv8 [ステージ] | `pkg/server/service/horde.go` の `SlayHorde` | mutex なしで `killCount` に並行書き込み（sync.Mutex が正解） |
-| Lv9 [ステージ] | `pkg/server/service/battle.go` の `HeroAttack` | グローバル `grudges` に5MBずつ append するメモリリーク（削除が正解） |
-| Lv10 [ステージ] | `pkg/server/repository/stage.go` の `GetByID` | エラー握りつぶしで `nil, nil` を返す → 呼び出し側で nil panic（`return nil, err` が正解） |
-| Lv11 [ステージ] | `pkg/server/service/spell.go` の `InterruptCast` | 詠唱channelを10秒待つだけ（select + time.After で2秒タイムアウトが正解） |
-| Lv12 [タスク] | `cmd/main.go` | Graceful Shutdown 未実装（signal.Notify + e.Shutdown を実装する） |
-| Lv13 [タスク] | `pkg/server/service/battle.go` の `BuildBattleReport` | `+=` の文字列連結（strings.Builder 化が正解、ベンチで計測） |
-| Lv14 [タスク] | `cmd/main.go`・`pkg/db/conn.go` | `log.Printf` のテキストログ（log/slog の構造化ログに置換する） |
-| Lv15 [タスク] | handler / service / repository 全層 | context.Context 未伝播（全層に ctx を通し QueryRowContext 等へ） |
-| Lv16 [ステージ] | `pkg/server/service/quest.go` の `GatherQuestReports` | 依頼調査が直列3秒（errgroup で並列化が正解。x/sync は参加者が go get する） |
-| Lv17 [ステージ] | `pkg/server/service/battle.go` の `summonSpirit` | 閉じない channel を待つ goroutine をリクエスト毎に起動（呼び出し削除が正解） |
-| Lv18 [ステージ] | `pkg/server/service/curse.go` の `DefuseCurse` | goroutine 内で panic → サーバーごと落ちる（defer + recover が正解） |
-| Lv19 [タスク] | `pkg/server/service/ancient.go` の `DecodeAncientText` | 毎回800msの解読をやり直す（sync.Once が正解） |
-| Lv20 [タスク] | `pkg/server/service/battle.go` の `RollCritical` | 固定シードの math/rand v1（math/rand/v2 への移行が正解） |
-| Lv21 [タスク] | `pkg/server/service/mathutil.go` | MaxInt / MaxFloat64 の重複（ジェネリクス Max[T cmp.Ordered] が正解） |
-| Lv22 [タスク] | `pkg/server/service/ranking.go` | 手書きバブルソート・検索ループ（slices.SortFunc / ContainsFunc が正解） |
-| Lv23 [タスク] | `pkg/server/service/spell.go` の `castSpell` + `spell_test.go` | testing/synctest（Go 1.25）で詠唱テスト。unbuffered channel の goroutineリークを synctest が暴く（バッファ付き channel が正解） |
-| Lv24 [タスク] | `pkg/db/conn.go` の `Connect` | コネクションプール未設定（SetMaxOpenConns 等の設定が正解、/api/debug/db で観測） |
-| Lv25 [タスク] | `pkg/server/server.go` の静的配信 | ディスク配信（リポジトリ直下に frontend_embed.go を作り go:embed all:_frontend + e.StaticFS が正解） |
+| Lv6 | `pkg/server/service/stealth.go` | フィールドが小文字＝非公開でJSONが空になる（大文字化＋jsonタグが正解）。判定 `POST /api/battle/scout` |
+| Lv7 | `pkg/server/service/mirror.go` の `TakeDamage` | 値レシーバでHPが減らない（ポインタレシーバが正解）。判定 `/battle/mirror` |
+| Lv8 | `pkg/server/service/loot.go` の `CollectLoot` | nil map への書き込みで panic（make が正解）。判定 `/battle/loot` |
+| Lv9 | `pkg/server/service/titan.go` の `ChallengeTitan` | 合計を int8 で数えてオーバーフロー（int が正解）。判定 `/battle/titan` |
+| Lv10 | `pkg/server/service/battle.go` の `ApplyDamage` | 致死ダメージ時に `return 1`（正しくは `return 0`）。テストで発見する想定。判定は「不死身の呪い」チャレンジ |
+| Lv11 | `pkg/server/service/naming.go` の `EngraveName` | `s[:5]` のバイト切断で日本語名が文字化け（[]rune が正解）。判定 `/battle/engrave` |
+| Lv12 | `pkg/server/service/mirage.go` の `ChallengeMirage` | スライス代入で配列を共有し本体まで弱体化（slices.Clone が正解）。判定 `/battle/mirage` |
+| Lv13 | `pkg/server/service/formation.go` の `FormBattleLine` | map の range 順序がランダムで隊列が毎回変わる（slices.Sort が正解）。判定 `/battle/formation` |
+| Lv14 | `pkg/server/repository/stage.go` の `GetByID` | エラー握りつぶしで `nil, nil` を返す → 呼び出し側で nil panic（`return nil, err` が正解） |
+| Lv15 | `pkg/server/repository/enemy.go` の `PeekVault` | rows.Close 忘れでDB接続がリーク（defer rows.Close() が正解）。判定 `/battle/vault`（db.Stats比較） |
+| Lv16 | `pkg/server/service/seal.go` の `BreakAllSeals` | 封印を順番に解く（goroutine + WaitGroup で並列化が正解） |
+| Lv17 | `pkg/server/service/horde.go` の `SlayHorde` | mutex なしで `killCount` に並行書き込み（sync.Mutex が正解） |
+| Lv18 | `pkg/server/service/spell.go` の `InterruptCast` | 詠唱channelを10秒待つだけ（select + time.After で2秒タイムアウトが正解） |
+| Lv19 | `pkg/server/service/quest.go` の `GatherQuestReports` | 依頼調査が直列3秒（errgroup で並列化が正解。x/sync は参加者が go get する） |
+| Lv20 | `pkg/server/service/courier.go` の `SendCourier` | http.Client の Timeout 未設定で眠るモックAPIを待ち続ける（Timeout: 2s が正解）。判定 `/battle/courier`、相手役 `GET /api/mock/guild` |
+| Lv21 | `pkg/server/service/assault.go` の `LaunchAssault` | 100 goroutine 一斉突撃で同時実行数が無制限（バッファ付きchannelのセマフォで5に制限が正解）。判定 `/battle/assault`（ピーク同時数カウンタ） |
+| Lv22 | `pkg/server/service/battle.go` の `summonSpirit` | 閉じない channel を待つ goroutine をリクエスト毎に起動（呼び出し削除が正解） |
+| Lv23 | `pkg/server/service/battle.go` の `HeroAttack` | グローバル `grudges` に5MBずつ append するメモリリーク（削除が正解） |
+| Lv24 | `pkg/server/service/familiar.go` の `summonOne` | 停止手段のない無限ループ goroutine を10体召喚（context.WithCancel + select が正解）。判定 `/battle/familiars` |
+| Lv25 | `pkg/server/service/curse.go` の `DefuseCurse` | goroutine 内で panic → サーバーごと落ちる（defer + recover が正解） |
+| Lv26 | `pkg/server/service/battle.go` の `BuildBattleReport` | `+=` の文字列連結（strings.Builder 化が正解）。判定 `/battle/report`（40000行を1秒以内） |
+| Lv27 | `pkg/server/service/ancient.go` の `DecodeAncientText` | 毎回800msの解読をやり直す（sync.Once が正解）。判定 `/api/legend/speedread` |
+| Lv28 | `pkg/server/service/battle.go` の `RollCritical` | 固定シードの math/rand v1（math/rand/v2 への移行が正解）。判定 `/battle/prophecy`（`service/prophecy.go` が固定シード列を再現、`criticalRolls++` は判定用に残す） |
 
-Lv12・Lv14・Lv15・Lv24・Lv25 は「現状のコードがそのまま修正前の状態」であり、バグを仕込んでいるわけではない（マーカーコメントのみ）。Lv21・Lv22 はリファクタ課題。
-観測用API（正しいコードで、参加者は変更しない）: `GET /api/debug/memory`（Lv9 メモリ / Lv17 goroutine 数）、`GET /api/debug/db`（Lv24 プール統計）— いずれも `pkg/server/handler/debug.go`。
-go.mod は Go 1.25（Lv23 の testing/synctest に必要）。
+観測用API（正しいコードで、参加者は変更しない）: `GET /api/debug/memory`（Lv23 メモリ / Lv22 goroutine 数）— `pkg/server/handler/debug.go`。
+判定用コード（変更しない）: `pkg/server/service/prophecy.go`（Lv28）、各 `/battle/*` 判定ハンドラー（`handler/battle.go`）、`GET /api/mock/guild`（Lv20の相手役）。
+go.mod は Go 1.22（math/rand/v2 に必要）。x/sync は Lv19 で参加者が go get する。
 
 ## DB構成
 
-MySQL 8.0。テーブルは3つ。
+MySQL 8.0。テーブルは4つ。
 
 ```
-heroes   id / name / hp / max_hp / attack / level / experience
-stages   id / name / description / required_experience / order_num
-enemies  id / stage_id / name / hp / max_hp / attack / experience_reward
+heroes            id / name / hp / max_hp / attack / level / experience
+stages            id / name / description / required_experience / order_num
+enemies           id / stage_id / name / hp / max_hp / attack / experience_reward
+challenge_enemies id / action / name / hp / max_hp / attack / unlock_exp   ← Lv6〜Lv28の敵
 ```
 
-ヒーローは常にid=1の1件のみ。
+ヒーローは常にid=1の1件のみ。challenge_enemies の action はフロントのチャレンジ種別キー。
 
 ## 起動
 
 ```bash
 docker compose up -d db
-make dev
+make start
 ```
 
 詳細は [README.md](README.md) を参照。

@@ -26,7 +26,8 @@ func Load() *Config {
 }
 
 func (c *Config) DSN() string {
-	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
+	// charset=utf8mb4 で日本語データの文字化けを防ぐ
+	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true&charset=utf8mb4",
 		c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.DBName)
 }
 

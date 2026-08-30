@@ -4,33 +4,36 @@
 
 ## 目次
 
-| Lv | 種別 | タイトル | テーマ |
-|----|------|---------|--------|
-| [Lv1](#lv1ヒーローが攻撃しても0ダメージ) | ステージ | ヒーローが攻撃しても0ダメージ | 関数の戻り値 |
-| [Lv2](#lv2ステージをクリアしても経験値が増えない) | ステージ | 経験値が増えない | DBへのUPDATE |
-| [Lv3](#lv3hp編集ボタンを押すと404になる) | ステージ | HP編集が404 | ルーティング追加 |
-| [Lv4](#lv4デーモンへの攻撃が反転する) | ステージ | デーモンへの攻撃が反転 | ハンドラーのデバッグ |
-| [Lv5](#lv5ボスドラゴンの攻撃だけ遅い) | ステージ | ボスの攻撃だけ遅い | 2層またぎのデバッグ |
-| [Lv6](#lv6-ステージ封印を並列に解かないとボスと戦えない) | ステージ | 封印の並列解除 | goroutine + WaitGroup |
-| [Lv7](#lv7-タスクテストを書いてバグを見つける) | タスク | テストでバグ発見 | テーブル駆動テスト |
-| [Lv8](#lv8-ステージゴブリンの群れを一掃せよ) | ステージ | 群れ討伐の数がズレる | Race Condition / Mutex |
-| [Lv9](#lv9-ステージ倒した敵の怨念を祓え) | ステージ | メモリが増え続ける | GC / メモリリーク |
-| [Lv10](#lv10-ステージ幻のステージの番人) | ステージ | 存在しないステージでpanic | nil / エラー握りつぶし |
-| [Lv11](#lv11-ステージボスの詠唱を中断せよ) | ステージ | 詠唱中断が固まる | select / time.After |
-| [Lv12](#lv12-タスク戦場からの安全な撤退) | タスク | Ctrl+Cで即死 | Graceful Shutdown |
-| [Lv13](#lv13-タスク戦闘レポートを高速化せよ) | タスク | レポート生成が遅い | bench / strings.Builder |
-| [Lv14](#lv14-タスク冒険の記録を整えよ) | タスク | ログが検索できない | log/slog |
-| [Lv15](#lv15-タスク時空の歪みを断ち切れ) | タスク | キャンセルが伝わらない | context伝播 |
-| [Lv16](#lv16-ステージギルドの依頼を同時にこなせ) | ステージ | 依頼調査が間に合わない | errgroup |
-| [Lv17](#lv17-ステージ悪霊の門を閉じろ) | ステージ | goroutineが増え続ける | goroutineリーク |
-| [Lv18](#lv18-ステージ呪いの爆弾を解除せよ) | ステージ | サーバーごと落ちる | goroutine内panic / recover |
-| [Lv19](#lv19-タスク古文書の解読は一度だけ) | タスク | 毎回800ms待たされる | sync.Once |
-| [Lv20](#lv20-タスククリティカルの乱数を現代化せよ) | タスク | 乱数が予測可能 | math/rand/v2 |
-| [Lv21](#lv21-タスク二つの関数を一つに束ねよ) | タスク | 重複関数の統合 | ジェネリクス |
-| [Lv22](#lv22-タスク手書きループを標準の剣で斬れ) | タスク | 車輪の再発明 | slicesパッケージ |
-| [Lv23](#lv23-タスク時間停止の魔法でテストせよ) | タスク | 時間依存テストが遅い | testing/synctest |
-| [Lv24](#lv24-タスク酒場の席数を最適化せよ) | タスク | DB接続が無制限 | コネクションプール |
-| [Lv25](#lv25-タスク伝説の単一バイナリ) | タスク | バイナリ単体で動かない | go:embed |
+| Lv | タイトル | テーマ |
+|----|---------|--------|
+| [Lv1](#lv1ヒーローが攻撃しても0ダメージ) | ヒーローが攻撃しても0ダメージ | 関数の戻り値 |
+| [Lv2](#lv2ステージをクリアしても経験値が増えない) | ステージをクリアしても経験値が増えない | DBへのUPDATE |
+| [Lv3](#lv3hp編集ボタンを押すとエラーになる) | HP編集ボタンを押すとエラーになる | ルーティング追加 |
+| [Lv4](#lv4デーモンへの攻撃が反転する) | デーモンへの攻撃が反転する | ハンドラーのデバッグ |
+| [Lv5](#lv5ボスドラゴンの攻撃だけ遅い) | ボスドラゴンの攻撃だけ遅い | 2層またぎのデバッグ |
+| [Lv6](#lv6姿の見えない敵) | 姿の見えない敵 | 公開/非公開・jsonタグ |
+| [Lv7](#lv7鏡の鎧を打ち破れ) | 鏡の鎧を打ち破れ | 値レシーバ vs ポインタレシーバ |
+| [Lv8](#lv8戦利品を袋に詰めろ) | 戦利品を袋に詰めろ | nil map / make |
+| [Lv9](#lv9巨神gopherを検分せよ) | 巨神Gopherを検分せよ | 整数型とオーバーフロー |
+| [Lv10](#lv10不死身の呪いを解けテストでバグを見つける) | 不死身の呪いを解け（テストでバグを見つける） | テーブル駆動テスト / ApplyDamage |
+| [Lv11](#lv11討伐碑に名を刻め) | 討伐碑に名を刻め | string / rune / UTF-8 |
+| [Lv12](#lv12分身gopherを見破れ) | 分身Gopherを見破れ | スライスの共有 / slices.Clone |
+| [Lv13](#lv13討伐隊を整列させろ) | 討伐隊を整列させろ | mapの順序 / slices.Sort |
+| [Lv14](#lv14幻のステージの番人) | 幻のステージの番人 | nil / エラー握りつぶし |
+| [Lv15](#lv15宝物庫の扉を閉めろ) | 宝物庫の扉を閉めろ | defer / rows.Close |
+| [Lv16](#lv16封印を並列に解かないとボスと戦えない) | 封印を並列に解かないとボスと戦えない | goroutine + WaitGroup |
+| [Lv17](#lv17ゴブリンの群れを一掃せよ) | ゴブリンの群れを一掃せよ | Race Condition / Mutex |
+| [Lv18](#lv18ボスの詠唱を中断せよ) | ボスの詠唱を中断せよ | select / time.After |
+| [Lv19](#lv19ギルドの依頼を同時にこなせ) | ギルドの依頼を同時にこなせ | errgroup |
+| [Lv20](#lv20眠るギルドに見切りをつけろ) | 眠るギルドに見切りをつけろ | http.Client の Timeout |
+| [Lv21](#lv21城門の大渋滞を制圧せよ) | 城門の大渋滞を制圧せよ | セマフォ（バッファ付きchannel） |
+| [Lv22](#lv22悪霊の門を閉じろ) | 悪霊の門を閉じろ | goroutineリーク |
+| [Lv23](#lv23倒した敵の怨念を祓え) | 倒した敵の怨念を祓え | GC / メモリリーク |
+| [Lv24](#lv24使い魔を家に帰せ) | 使い魔を家に帰せ | context.WithCancel |
+| [Lv25](#lv25呪いの爆弾を解除せよ) | 呪いの爆弾を解除せよ | goroutine内panic / recover |
+| [Lv26](#lv26討伐報告書を高速化せよ) | 討伐報告書を高速化せよ | strings.Builder / bench |
+| [Lv27](#lv27古文書を速読せよ) | 古文書を速読せよ | sync.Once |
+| [Lv28](#lv28予言者に打ち勝て) | 予言者に打ち勝て | math/rand/v2 |
 
 ---
 
@@ -67,7 +70,7 @@ if err := h.heroRepo.UpdateExperience(newExp); err != nil {
 
 ---
 
-## Lv3：HP編集ボタンを押すと404になる
+## Lv3：HP編集ボタンを押すとエラーになる
 
 **修正ファイル：** `pkg/server/handler/setting.go`
 
@@ -87,23 +90,16 @@ api.PUT("/hero/hp", hero.UpdateHP)  // ← この行が抜けている
 
 ```go
 // バグ版
-func (h *BattleHandler) Attack(c echo.Context) error {
-    ...
-    result := service.HeroAttack(req)
-    // [Lv4 バグ仕込み箇所]
-    if req.EnemyName == "デーモン" {
-        result.Damage = -result.Damage          // ← バグ: ダメージを反転
-        result.Message = "攻撃が吸収された！" + result.Message
-    }
-    return c.JSON(http.StatusOK, result)
+result := service.HeroAttack(req)
+// [Lv4 バグ仕込み箇所]
+if req.EnemyName == "デーモン" {
+    result.Damage = -result.Damage          // ← バグ: ダメージを反転
+    result.Message = "攻撃が吸収された！" + result.Message
 }
 
 // 修正後（if ブロックを丸ごと削除）
-func (h *BattleHandler) Attack(c echo.Context) error {
-    ...
-    result := service.HeroAttack(req)
-    return c.JSON(http.StatusOK, result)
-}
+result := service.HeroAttack(req)
+return c.JSON(http.StatusOK, result)
 ```
 
 ---
@@ -116,23 +112,8 @@ func (h *BattleHandler) Attack(c echo.Context) error {
 
 ```go
 // バグ版
-func EnemyAttack(req EnemyAttackRequest) AttackResponse {
-    damage := CalculateEnemyDamage(req.EnemyAttack)
-    if req.EnemyName == "ボスドラゴン" {
-        time.Sleep(3 * time.Second)  // ← バグ: 削除する
-    }
-    ...
-}
-
-// 修正後
-func EnemyAttack(req EnemyAttackRequest) AttackResponse {
-    damage := CalculateEnemyDamage(req.EnemyAttack)
-    newHeroHP := ApplyDamage(req.HeroHP, damage)
-    return AttackResponse{
-        Damage:    damage,
-        NewHeroHP: newHeroHP,
-        Message:   fmt.Sprintf("%s が %d ダメージを与えた！", req.EnemyName, damage),
-    }
+if req.EnemyName == "ボスドラゴン" {
+    time.Sleep(3 * time.Second)  // ← バグ: 削除する
 }
 ```
 
@@ -140,53 +121,100 @@ func EnemyAttack(req EnemyAttackRequest) AttackResponse {
 
 ```go
 // バグ版
-func (h *BattleHandler) EnemyAttack(c echo.Context) error {
-    ...
-    if req.EnemyName == "ボスドラゴン" {
-        time.Sleep(5 * time.Second)  // ← バグ: 削除する
-    }
-    result := service.EnemyAttack(req)
-    return c.JSON(http.StatusOK, result)
-}
-
-// 修正後（if ブロックを丸ごと削除）
-func (h *BattleHandler) EnemyAttack(c echo.Context) error {
-    ...
-    result := service.EnemyAttack(req)
-    return c.JSON(http.StatusOK, result)
+if req.EnemyName == "ボスドラゴン" {
+    time.Sleep(5 * time.Second)  // ← バグ: 削除する
 }
 ```
 
+どちらも if ブロックを丸ごと削除する。
+
 ---
 
-## Lv6 [ステージ]：封印を並列に解かないとボスと戦えない
+## Lv6：姿の見えない敵
 
-**修正ファイル：** `pkg/server/service/seal.go` の `BreakAllSeals`
+**修正ファイル：** `pkg/server/service/stealth.go`
 
 ```go
-// 修正後
-func BreakAllSeals() []string {
-    seals := []string{"炎の封印", "水の封印", "風の封印", "大地の封印", "闇の封印"}
-    results := make([]string, len(seals))
-    var wg sync.WaitGroup
-    for i, seal := range seals {
-        wg.Add(1)
-        go func(i int, seal string) {
-            defer wg.Done()
-            time.Sleep(1 * time.Second)
-            results[i] = seal + "を解いた！"
-        }(i, seal)
-    }
-    wg.Wait()
-    return results
+// 修正前（小文字＝非公開なのでJSONに出ない）
+type ScoutedEnemy struct {
+    name   string
+    hp     int
+    attack int
+}
+
+// 修正後（大文字で公開し、jsonタグでキー名を指定）
+type ScoutedEnemy struct {
+    Name   string `json:"name"`
+    HP     int    `json:"hp"`
+    Attack int    `json:"attack"`
+}
+
+func ScoutEnemy() ScoutedEnemy {
+    return ScoutedEnemy{Name: "ステルスGopher", HP: 55, Attack: 13}
 }
 ```
 
-import に `"sync"` を追加するのを忘れずに。
+フィールドを大文字にしたら、コンポジットリテラル（`ScoutEnemy` 内）のフィールド名も直すこと。
 
 ---
 
-## Lv7 [タスク]：テストを書いてバグを見つける
+## Lv7：鏡の鎧を打ち破れ
+
+**修正ファイル：** `pkg/server/service/mirror.go` の `TakeDamage`
+
+```go
+// 修正前（値レシーバ: コピーのHPを減らしているだけ）
+func (k MirrorKnight) TakeDamage(damage int) {
+    k.HP -= damage
+}
+
+// 修正後（ポインタレシーバ: 本体を変更できる）
+func (k *MirrorKnight) TakeDamage(damage int) {
+    k.HP -= damage
+}
+```
+
+「メソッドがレシーバを変更するならポインタレシーバ」がGoの基本ルール。
+
+---
+
+## Lv8：戦利品を袋に詰めろ
+
+**修正ファイル：** `pkg/server/service/loot.go` の `CollectLoot`
+
+```go
+// 修正前（nil map への書き込みで panic）
+var bag map[string]int
+
+// 修正後
+bag := make(map[string]int)
+```
+
+nil map は読み取り（`bag["x"]` → 0）は安全だが、書き込みは panic する。
+
+---
+
+## Lv9：巨神Gopherを検分せよ
+
+**修正ファイル：** `pkg/server/service/titan.go` の `ChallengeTitan`
+
+```go
+// 修正前（int8 は -128〜127。750 は入らずオーバーフロー）
+var total int8
+...
+return int(total)
+
+// 修正後
+var total int
+...
+return total
+```
+
+25×30=750 を int8 で足すと 750 - 256×3 = -18 になる（値が一周する）。
+
+---
+
+## Lv10：不死身の呪いを解け（テストでバグを見つける）
 
 **テストケース例：**
 
@@ -225,75 +253,64 @@ func ApplyDamage(currentHP, damage int) int {
 
 ---
 
-## Lv8 [ステージ]：ゴブリンの群れを一掃せよ
+## Lv11：討伐碑に名を刻め
 
-**修正ファイル：** `pkg/server/service/horde.go` の `SlayHorde`
-
-`go test -race ./...` でデータ競合を検出できる。
+**修正ファイル：** `pkg/server/service/naming.go` の `EngraveName`
 
 ```go
-// 修正後（sync.Mutex でカウンタを守る）
-func SlayHorde(total int) HordeResponse {
-    killCount = 0
-    var mu sync.Mutex
-    var wg sync.WaitGroup
-    for i := 0; i < total; i++ {
-        wg.Add(1)
-        go func() {
-            defer wg.Done()
-            time.Sleep(time.Microsecond) // 討伐の一瞬のスキ
-            mu.Lock()
-            killCount++
-            mu.Unlock()
-        }()
-    }
-    wg.Wait()
-    // ...メッセージ組み立ては変更なし
+// 修正前（バイトで切るので日本語が壊れる）
+if len(name) > 5 {
+    return name[:5]
 }
+return name
+
+// 修正後（runeに変換して「文字数」で切る）
+r := []rune(name)
+if len(r) > 5 {
+    return string(r[:5])
+}
+return name
 ```
 
-`sync/atomic` を使う場合は `var killCount int64` にして `atomic.AddInt64(&killCount, 1)` でもよい。
+`len(string)` はバイト数、`len([]rune(s))` は文字数。日本語1文字はUTF-8で3バイト。
 
 ---
 
-## Lv9 [ステージ]：倒した敵の怨念を祓え
+## Lv12：分身Gopherを見破れ
 
-**修正ファイル：** `pkg/server/service/battle.go`
+**修正ファイル：** `pkg/server/service/mirage.go` の `ChallengeMirage`
 
 ```go
-// バグ版
-var grudges [][]byte
+// 修正前（同じ配列を共有しているので本体も変わる）
+mirage = body
 
-func HeroAttack(req AttackRequest) AttackResponse {
-    damage := CalculateDamage(req.HeroAttack)
-    grudges = append(grudges, make([]byte, 5*1024*1024)) // ← バグ
-    ...
-}
-
-// 修正後（グローバル変数 grudges と append の行を丸ごと削除）
-func HeroAttack(req AttackRequest) AttackResponse {
-    damage := CalculateDamage(req.HeroAttack)
-    return AttackResponse{
-        Damage:  damage,
-        Message: fmt.Sprintf("%d ダメージを与えた！", damage),
-    }
-}
+// 修正後（独立したコピーを作る）
+mirage = slices.Clone(body)
 ```
 
-修正後は**サーバーの再起動が必要**（溜まった怨念＝ヒープ上の参照は再起動でしか消えない）。
-
-観測コマンド：
-
-```bash
-curl http://localhost:8080/api/debug/memory
-GODEBUG=gctrace=1 make dev
-```
-
-ポイント：GC は「どこからも参照されていないメモリ」しか回収できない。グローバル変数に参照が残っている限りリークし続ける。
+import に `"slices"` を追加する。`make([]int, len(body))` + `copy(mirage, body)` でも同じ。
 
 ---
 
-## Lv10 [ステージ]：幻のステージの番人
+## Lv13：討伐隊を整列させろ
+
+**修正ファイル：** `pkg/server/service/formation.go` の `FormBattleLine`
+
+```go
+// 修正後（取り出した後にソートして順序を安定させる）
+var line []string
+for name := range members {
+    line = append(line, name)
+}
+slices.Sort(line) // ← これを追加
+return line
+```
+
+import に `"slices"` を追加する。mapのrange順序がランダムなのは言語仕様（順序に依存したコードを書かせないため）。
+
+---
+
+## Lv14：幻のステージの番人
 
 **修正ファイル：** `pkg/server/repository/stage.go` の `GetByID`
 
@@ -327,7 +344,87 @@ if err != nil {
 
 ---
 
-## Lv11 [ステージ]：ボスの詠唱を中断せよ
+## Lv15：宝物庫の扉を閉めろ
+
+**修正ファイル：** `pkg/server/repository/enemy.go` の `PeekVault`
+
+```go
+// 修正後（Queryの直後に defer で必ず閉める）
+rows, err := r.db.Query(`SELECT id FROM enemies`)
+if err != nil {
+    return false, err
+}
+defer rows.Close() // ← これを追加
+if rows.Next() {
+    return true, nil
+}
+return false, rows.Err()
+```
+
+途中で return しても defer は必ず実行される。「取得したら直後に defer Close」がGoの作法。
+（補足: rows を最後まで読み切った場合は自動で閉じられるが、途中で切り上げる場合は必須）
+
+---
+
+## Lv16：封印を並列に解かないとボスと戦えない
+
+**修正ファイル：** `pkg/server/service/seal.go` の `BreakAllSeals`
+
+```go
+// 修正後
+func BreakAllSeals() []string {
+    seals := []string{"炎の封印", "水の封印", "風の封印", "大地の封印", "闇の封印"}
+    results := make([]string, len(seals))
+    var wg sync.WaitGroup
+    for i, seal := range seals {
+        wg.Add(1)
+        go func(i int, seal string) {
+            defer wg.Done()
+            time.Sleep(1 * time.Second)
+            results[i] = seal + "を解いた！"
+        }(i, seal)
+    }
+    wg.Wait()
+    return results
+}
+```
+
+import に `"sync"` を追加するのを忘れずに。
+
+---
+
+## Lv17：ゴブリンの群れを一掃せよ
+
+**修正ファイル：** `pkg/server/service/horde.go` の `SlayHorde`
+
+`go test -race ./...` でデータ競合を検出できる。
+
+```go
+// 修正後（sync.Mutex でカウンタを守る）
+func SlayHorde(total int) HordeResponse {
+    killCount = 0
+    var mu sync.Mutex
+    var wg sync.WaitGroup
+    for i := 0; i < total; i++ {
+        wg.Add(1)
+        go func() {
+            defer wg.Done()
+            time.Sleep(time.Microsecond) // 討伐の一瞬のスキ
+            mu.Lock()
+            killCount++
+            mu.Unlock()
+        }()
+    }
+    wg.Wait()
+    // ...メッセージ組み立ては変更なし
+}
+```
+
+`sync/atomic` を使う場合は `var killCount int64` にして `atomic.AddInt64(&killCount, 1)` でもよい。
+
+---
+
+## Lv18：ボスの詠唱を中断せよ
 
 **修正ファイル：** `pkg/server/service/spell.go` の `InterruptCast`
 
@@ -351,157 +448,7 @@ func InterruptCast() (string, bool) {
 
 ---
 
-## Lv12 [タスク]：戦場からの安全な撤退
-
-**修正ファイル：** `cmd/main.go`
-
-```go
-package main
-
-import (
-    "context"
-    "log"
-    "net/http"
-    "os"
-    "os/signal"
-    "syscall"
-    "time"
-
-    "github.com/maropook/gopher-slayer/pkg/constant"
-    appdb "github.com/maropook/gopher-slayer/pkg/db"
-    "github.com/maropook/gopher-slayer/pkg/server"
-)
-
-func main() {
-    cfg := constant.Load()
-    db := appdb.Connect(cfg)
-    defer db.Close()
-
-    e := server.New(db)
-
-    // 別goroutineでサーバーを起動する
-    go func() {
-        log.Printf("Server starting on :%s", cfg.Port)
-        if err := e.Start(":" + cfg.Port); err != nil && err != http.ErrServerClosed {
-            e.Logger.Fatal(err)
-        }
-    }()
-
-    // Ctrl+C（SIGINT）/ SIGTERM を待つ
-    quit := make(chan os.Signal, 1)
-    signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-    <-quit
-
-    // 10秒以内に進行中のリクエストを処理してから終了する
-    ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-    defer cancel()
-    if err := e.Shutdown(ctx); err != nil {
-        e.Logger.Fatal(err)
-    }
-}
-```
-
----
-
-## Lv13 [タスク]：戦闘レポートを高速化せよ
-
-**修正ファイル：** `pkg/server/service/battle.go` の `BuildBattleReport`
-
-```go
-// 修正前（+= 連結は毎回新しい文字列を作るので遅い）
-func BuildBattleReport(logs []string) string {
-    report := ""
-    for _, log := range logs {
-        report += log + "\n"
-    }
-    return report
-}
-
-// 修正後
-func BuildBattleReport(logs []string) string {
-    var b strings.Builder
-    for _, log := range logs {
-        b.WriteString(log)
-        b.WriteString("\n")
-    }
-    return b.String()
-}
-```
-
-import に `"strings"` を追加する。計測コマンド：
-
-```bash
-go test ./pkg/server/service/ -bench BuildBattleReport -benchmem
-```
-
-修正前後で `B/op`（メモリ確保量）と `ns/op` が大きく減っていれば成功。
-
----
-
-## Lv14 [タスク]：冒険の記録を整えよ
-
-**修正ファイル：** `cmd/main.go`、`pkg/db/conn.go`
-
-```go
-// cmd/main.go
-slog.Info("server starting", "port", cfg.Port)
-
-// pkg/db/conn.go
-slog.Info("connected to database")
-slog.Warn("database not ready, retrying", "attempt", i, "max", 10)
-
-// log.Fatal 相当（slogにFatalはないので Error + os.Exit）
-slog.Error("failed to connect to database", "attempts", 10)
-os.Exit(1)
-```
-
-JSON形式にする場合は main の先頭で：
-
-```go
-slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
-```
-
----
-
-## Lv15 [タスク]：時空の歪みを断ち切れ
-
-**修正ファイル：** handler / service / repository の全層
-
-repository の例（`pkg/server/repository/hero.go`）：
-
-```go
-func (r *HeroRepository) Get(ctx context.Context) (*service.Hero, error) {
-    hero := &service.Hero{}
-    row := r.db.QueryRowContext(ctx, `
-        SELECT id, name, hp, max_hp, attack, level, experience
-        FROM heroes WHERE id = 1
-    `)
-    ...
-}
-
-func (r *HeroRepository) UpdateExperience(ctx context.Context, experience int) error {
-    _, err := r.db.ExecContext(ctx, `UPDATE heroes SET experience = ? WHERE id = 1`, experience)
-    return err
-}
-```
-
-handler の例（`pkg/server/handler/hero.go`）：
-
-```go
-func (h *HeroHandler) GetHero(c echo.Context) error {
-    ctx := c.Request().Context()
-    hero, err := h.heroRepo.Get(ctx)
-    ...
-}
-```
-
-- 対象：`repository/hero.go`、`repository/stage.go`、`repository/enemy.go` の全メソッドと、その呼び出し元の handler すべて
-- `QueryRow` → `QueryRowContext` / `Query` → `QueryContext` / `Exec` → `ExecContext`
-- コンパイルエラーを頼りに呼び出し元を順番に直していけばよい
-
----
-
-## Lv16 [ステージ]：ギルドの依頼を同時にこなせ
+## Lv19：ギルドの依頼を同時にこなせ
 
 **修正ファイル：** `pkg/server/service/quest.go` の `GatherQuestReports`
 
@@ -536,7 +483,49 @@ Go 1.22 以降はループ変数がイテレーションごとに新しい変数
 
 ---
 
-## Lv17 [ステージ]：悪霊の門を閉じろ
+## Lv20：眠るギルドに見切りをつけろ
+
+**修正ファイル：** `pkg/server/service/courier.go` の `SendCourier`
+
+```go
+// 修正前（タイムアウトなし＝永遠に待つ）
+client := &http.Client{}
+
+// 修正後（2秒で諦めてエラーを返す）
+client := &http.Client{Timeout: 2 * time.Second}
+```
+
+import に `"time"` を追加する。判定ハンドラーはエラーが2秒程度で返ってくれば「見切りをつけて帰還した」と判定する。
+
+---
+
+## Lv21：城門の大渋滞を制圧せよ
+
+**修正ファイル：** `pkg/server/service/assault.go` の `LaunchAssault`
+
+```go
+// 修正後（バッファ付きchannelをセマフォにして同時5人に制限）
+var wg sync.WaitGroup
+sem := make(chan struct{}, 5)
+for i := 0; i < 100; i++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        sem <- struct{}{} // 枠を取る（満員なら空くまで待つ）
+        enterGate()
+        time.Sleep(10 * time.Millisecond)
+        leaveGate()
+        <-sem // 枠を返す
+    }()
+}
+wg.Wait()
+```
+
+enterGate/leaveGate（同時数カウンタ）は判定用なので残すこと。
+
+---
+
+## Lv22：悪霊の門を閉じろ
 
 **修正ファイル：** `pkg/server/service/battle.go`
 
@@ -568,7 +557,81 @@ curl http://localhost:8080/api/debug/memory   # num_goroutine が増え続けな
 
 ---
 
-## Lv18 [ステージ]：呪いの爆弾を解除せよ
+## Lv23：倒した敵の怨念を祓え
+
+**修正ファイル：** `pkg/server/service/battle.go`
+
+```go
+// バグ版
+var grudges [][]byte
+
+func HeroAttack(req AttackRequest) AttackResponse {
+    damage := CalculateDamage(req.HeroAttack)
+    grudges = append(grudges, make([]byte, 5*1024*1024)) // ← バグ
+    ...
+}
+
+// 修正後（グローバル変数 grudges と append の行を丸ごと削除）
+func HeroAttack(req AttackRequest) AttackResponse {
+    damage := CalculateDamage(req.HeroAttack)
+    return AttackResponse{
+        Damage:  damage,
+        Message: fmt.Sprintf("%d ダメージを与えた！", damage),
+    }
+}
+```
+
+修正後は**サーバーの再起動が必要**（溜まった怨念＝ヒープ上の参照は再起動でしか消えない）。
+
+観測コマンド：
+
+```bash
+curl http://localhost:8080/api/debug/memory
+GODEBUG=gctrace=1 make start
+```
+
+ポイント：GC は「どこからも参照されていないメモリ」しか回収できない。グローバル変数に参照が残っている限りリークし続ける。
+
+---
+
+## Lv24：使い魔を家に帰せ
+
+**修正ファイル：** `pkg/server/service/familiar.go`
+
+```go
+import (
+    "context"
+    "time"
+)
+
+// 修正後: ctx を受け取り、合図が来たら帰る
+func summonOne(ctx context.Context) {
+    go func() {
+        for {
+            select {
+            case <-ctx.Done():
+                return // 帰宅の合図で帰る
+            case <-time.After(20 * time.Millisecond):
+                // 雑用をこなす
+            }
+        }
+    }()
+}
+
+func SummonFamiliars() {
+    ctx, cancel := context.WithCancel(context.Background())
+    for i := 0; i < 10; i++ {
+        summonOne(ctx)
+    }
+    time.AfterFunc(100*time.Millisecond, cancel) // 仕事が終わったら全員に帰宅の合図
+}
+```
+
+`cancel()` を呼ぶと `ctx.Done()` の channel が閉じ、待っている全goroutineに一斉に合図が届く。
+
+---
+
+## Lv25：呪いの爆弾を解除せよ
 
 **修正ファイル：** `pkg/server/service/curse.go` の `DefuseCurse`
 
@@ -597,7 +660,43 @@ func DefuseCurse() string {
 
 ---
 
-## Lv19 [タスク]：古文書の解読は一度だけ
+## Lv26：討伐報告書を高速化せよ
+
+**修正ファイル：** `pkg/server/service/battle.go` の `BuildBattleReport`
+
+```go
+// 修正前（+= 連結は毎回新しい文字列を作るので遅い）
+func BuildBattleReport(logs []string) string {
+    report := ""
+    for _, log := range logs {
+        report += log + "\n"
+    }
+    return report
+}
+
+// 修正後
+func BuildBattleReport(logs []string) string {
+    var b strings.Builder
+    for _, log := range logs {
+        b.WriteString(log)
+        b.WriteString("\n")
+    }
+    return b.String()
+}
+```
+
+import に `"strings"` を追加する。計測コマンド：
+
+```bash
+go test ./pkg/server/service/ -bench BuildBattleReport -benchmem
+```
+
+修正前後で `B/op`（メモリ確保量）と `ns/op` が大きく減っていれば成功。
+ゲーム画面の「討伐報告書」チャレンジ（40000行を1秒以内）も成功するようになる。
+
+---
+
+## Lv27：古文書を速読せよ
 
 **修正ファイル：** `pkg/server/service/ancient.go`
 
@@ -626,7 +725,7 @@ func DecodeAncientText() string {
 
 ---
 
-## Lv20 [タスク]：クリティカルの乱数を現代化せよ
+## Lv28：予言者に打ち勝て
 
 **修正ファイル：** `pkg/server/service/battle.go`
 
@@ -636,181 +735,37 @@ import "math/rand"
 var criticalRNG = rand.New(rand.NewSource(1)) // 固定シード
 
 func RollCritical() bool {
+    criticalRolls++ // 予言者（Prophecy）の判定用カウンタ
     return criticalRNG.Intn(4) == 0
 }
 
-// 修正後（criticalRNG 変数は削除、import を math/rand/v2 に変更）
+// 修正後（criticalRNG 変数は削除、import を math/rand/v2 に変更。
+// criticalRolls++ は予言者の判定用なので残す）
 import "math/rand/v2"
 
 func RollCritical() bool {
+    criticalRolls++
     return rand.IntN(4) == 0
 }
 ```
 
 `math/rand/v2`（Go 1.22）は自動でシードされ、`Seed` 関数自体が存在しない。トップレベルの `rand.IntN` をそのまま使えばよい。
 
----
-
-## Lv21 [タスク]：二つの関数を一つに束ねよ
-
-**修正ファイル：** `pkg/server/service/mathutil.go`、`mathutil_test.go`
-
-```go
-import "cmp"
-
-// 修正後（MaxInt / MaxFloat64 を削除して1つに）
-func Max[T cmp.Ordered](a, b T) T {
-    if a > b {
-        return a
-    }
-    return b
-}
-```
-
-テストの書き換え例：
-
-```go
-func TestMax(t *testing.T) {
-    if got := Max(3, 5); got != 5 {
-        t.Errorf("Max(3, 5) = %d, want 5", got)
-    }
-    if got := Max(10, -2); got != 10 {
-        t.Errorf("Max(10, -2) = %d, want 10", got)
-    }
-    if got := Max(1.5, 2.5); got != 2.5 {
-        t.Errorf("Max(1.5, 2.5) = %f, want 2.5", got)
-    }
-}
-```
-
----
-
-## Lv22 [タスク]：手書きループを標準の剣で斬れ
-
-**修正ファイル：** `pkg/server/service/ranking.go`
-
-```go
-import (
-    "cmp"
-    "slices"
-    "strings"
-)
-
-// 修正後
-func SortEnemiesByAttack(enemies []*Enemy) {
-    slices.SortFunc(enemies, func(a, b *Enemy) int {
-        return cmp.Compare(b.Attack, a.Attack) // b, a の順にすると降順
-    })
-}
-
-func HasBoss(enemies []*Enemy) bool {
-    return slices.ContainsFunc(enemies, func(e *Enemy) bool {
-        return strings.Contains(e.Name, "ボス")
-    })
-}
-```
-
-既存のテスト（`ranking_test.go`）は書き換え不要。そのまま通れば挙動を保ったリファクタ成功。
-
----
-
-## Lv23 [タスク]：時間停止の魔法でテストせよ
-
-**修正ファイル：** `pkg/server/service/spell_test.go`（Skipを外す）、`pkg/server/service/spell.go`
-
-Step 1 で Skip を外すと deadlock で panic する。これは synctest が「タイムアウト後、詠唱 goroutine が `done <- "メテオ"` の送信で永遠にブロックする」という goroutineリークを検出した結果。
-
-```go
-// spell.go 修正後（channelをバッファ付きに）
-func castSpell() <-chan string {
-    done := make(chan string, 1) // ← バッファ付き。送信側はブロックせず終了できる
-    go func() {
-        time.Sleep(10 * time.Second)
-        done <- "メテオ"
-    }()
-    return done
-}
-```
-
-```go
-// spell_test.go（Skipを消した状態。スターターに最初から入っている）
-func TestInterruptCast(t *testing.T) {
-    synctest.Test(t, func(t *testing.T) {
-        message, interrupted := InterruptCast()
-        if !interrupted {
-            t.Errorf("詠唱を中断できなかった: %s", message)
-        }
-        // ボスの詠唱（10秒）が終わるまで仮想時間で待つ（実時間は一瞬）
-        time.Sleep(10 * time.Second)
-    })
-}
-```
-
-バブル内では `time.Sleep(10s)` も `time.After(2s)` も仮想時間で進むため、テストは数ミリ秒で完了する。
-synctest は「テスト本体が終わった時点でブロックしたまま残っている goroutine」を deadlock として報告する。unbuffered channel だと詠唱 goroutine が送信で永遠にブロックするため、仮想時間をいくら進めても終了できず、リークとして検出される。
-
-※ このテストは Lv11 修正後にしか通らない（修正前は `interrupted == false` で失敗する）。
-
----
-
-## Lv24 [タスク]：酒場の席数を最適化せよ
-
-**修正ファイル：** `pkg/db/conn.go` の `Connect`
-
-```go
-if pingErr := conn.Ping(); pingErr == nil {
-    log.Println("Connected to database")
-    // 修正後: プール設定を追加
-    conn.SetMaxOpenConns(25)
-    conn.SetMaxIdleConns(5)
-    conn.SetConnMaxLifetime(5 * time.Minute)
-    return conn
-}
-```
-
-観測：
+判定の仕組み：`pkg/server/service/prophecy.go`（変更不要）が「固定シード1の math/rand を判定回数ぶん早送りした未来」を予言し、実際の判定12回と突き合わせる。固定シードのままだと全的中（`all_match: true`）、v2 に移行すると予言は外れる。
 
 ```bash
-curl http://localhost:8080/api/debug/db
+# 修正前は all_match: true、修正後は false
+curl -X POST http://localhost:8080/api/battle/prophecy
+```
+
+---
+
 # 設定後は max_open が 25 になる。負荷をかけると open_connections が上限で頭打ちになり、
 # 超えた分は wait_count に現れる。
 ```
 
 ---
 
-## Lv25 [タスク]：伝説の単一バイナリ
-
-**新規ファイル：** リポジトリ直下 `frontend_embed.go`
-
-```go
-package gopherslayer
-
-import "embed"
-
-// all: を付けると _ や . で始まるファイル/ディレクトリも埋め込める
-//
-//go:embed all:_frontend
-var FrontendFS embed.FS
-```
-
-**修正ファイル：** `pkg/server/server.go`
-
-```go
-import gopherslayer "github.com/maropook/gopher-slayer"
-
-// 修正前
-e.Static("/", "_frontend")
-e.Static("/images", "_frontend/images")
-
-// 修正後（1行にまとまる。/images/... も embed.FS 内のパスで解決される）
-e.StaticFS("/", echo.MustSubFS(gopherslayer.FrontendFS, "_frontend"))
-```
-
-確認：
-
-```bash
-go build -o /tmp/gopher-slayer-server ./cmd
-cd /tmp && ./gopher-slayer-server
 # ソースのないディレクトリから起動してもゲーム画面が表示される
 ```
 

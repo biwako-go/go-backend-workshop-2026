@@ -4,7 +4,7 @@ import "time"
 
 // BreakAllSeals はボスに挑む前に5つの封印を解く。
 //
-// [Lv6 バグ仕込み箇所]
+// [Lv16 バグ仕込み箇所]
 // 封印を順番に解いているので5秒かかってしまう。
 // goroutine と sync.WaitGroup を使って並列化しよう。
 func BreakAllSeals() []string {

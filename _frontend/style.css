@@ -404,6 +404,66 @@ html, body {
   text-align: center;
 }
 
+/* チャレンジ画面の敵（対決演出） */
+.challenge-enemy {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.challenge-enemy-sprite {
+  width: 130px;
+  height: 130px;
+  object-fit: contain;
+  filter: drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.45));
+  transition: transform 0.6s ease, opacity 0.6s ease, filter 0.6s ease;
+}
+
+/* 勝利: 敵を撃破（倒れてグレーアウト） */
+.challenge-enemy-sprite.defeated {
+  transform: rotate(100deg) translateY(14px);
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+/* 失敗: 敵が吠える */
+.challenge-enemy-sprite.rage {
+  animation: enemy-rage 0.5s ease-in-out 2;
+}
+
+@keyframes enemy-rage {
+  0%, 100% { transform: scale(1); }
+  25% { transform: scale(1.15) rotate(-4deg); }
+  75% { transform: scale(1.15) rotate(4deg); }
+}
+
+.challenge-enemy-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: #2a1a00;
+  background: rgba(245, 230, 180, 0.92);
+  border: 2px solid #5a3e1b;
+  border-radius: 3px;
+  padding: 3px 14px;
+}
+
+/* チャレンジ画面の敵HPバー */
+.challenge-hp-wrap {
+  background: rgba(245, 230, 180, 0.92);
+  border: 2px solid #5a3e1b;
+  border-radius: 3px;
+  padding: 4px 10px;
+}
+
+.challenge-hp-wrap .battle-hp-bar {
+  width: 150px;
+}
+
+.challenge-hp-wrap .battle-hp-fill {
+  transition: width 0.5s ease;
+}
+
 .challenge-condition {
   font-size: 13px;
   color: #f0e0a0;
@@ -511,6 +571,36 @@ html, body {
   top: 2%;
 }
 
+/* Hint button on stage/challenge cards */
+.stage-hint-btn {
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: 10px;
+  color: #5a3e1b;
+  background: rgba(255, 250, 230, 0.9);
+  border: 1px solid #a0824a;
+  border-radius: 3px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.stage-hint-btn:hover {
+  background: #f5e6b4;
+}
+
+/* Result screen: Lv2 EXP未保存の警告 */
+.exp-warning {
+  margin-top: 12px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #7a2020;
+  background: rgba(220, 120, 100, 0.15);
+  border: 1px solid #c06040;
+  border-radius: 3px;
+  text-align: left;
+}
+
 /* Legend line: 古文書の言い伝え (Lv19 sync.Once 観測用) */
 .legend-line {
   font-size: 11px;
@@ -521,7 +611,7 @@ html, body {
   margin-bottom: 6px;
 }
 
-/* Server memory badge: top-right corner (Lv9 メモリリーク観測用) */
+/* Server memory badge: top-right corner (Lv23 メモリリーク観測用) */
 .server-mem-badge {
   position: absolute;
   top: 12px;

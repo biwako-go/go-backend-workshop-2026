@@ -3,7 +3,7 @@ package service
 import "testing"
 
 // BenchmarkBuildBattleReport は戦闘レポート生成のベンチマーク。
-// Lv13: まず現状を計測し、strings.Builder に書き換えて B/op と ns/op を比べよう。
+// Lv26: まず現状を計測し、strings.Builder に書き換えて B/op と ns/op を比べよう。
 //
 // 実行方法:
 //

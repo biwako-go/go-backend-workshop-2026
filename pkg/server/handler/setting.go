@@ -20,6 +20,10 @@ func RegisterRoutes(e *echo.Echo, hero *HeroHandler, stage *StageHandler, battle
 	api.POST("/stages/:id/clear", stage.ClearStage)
 	api.POST("/stages/5/challenge", stage.ChallengeBoss)
 	api.GET("/legend", stage.GetLegend)
+	api.POST("/legend/speedread", stage.SpeedReadLegend)
+
+	// チャレンジ（Lv6〜Lv28）の敵一覧
+	api.GET("/challenges", stage.GetChallenges)
 
 	// バトル
 	api.POST("/battle/attack", battle.Attack)
@@ -27,11 +31,26 @@ func RegisterRoutes(e *echo.Echo, hero *HeroHandler, stage *StageHandler, battle
 	api.POST("/battle/horde", battle.SlayHorde)
 	api.POST("/battle/interrupt", battle.InterruptCast)
 	api.POST("/battle/defuse", battle.Defuse)
+	api.POST("/battle/report", battle.Report)
+	api.POST("/battle/prophecy", battle.Prophecy)
+	api.POST("/battle/scout", battle.Scout)
+	api.POST("/battle/mirror", battle.Mirror)
+	api.POST("/battle/loot", battle.Loot)
+	api.POST("/battle/titan", battle.Titan)
+	api.POST("/battle/engrave", battle.Engrave)
+	api.POST("/battle/mirage", battle.Mirage)
+	api.POST("/battle/formation", battle.Formation)
+	api.POST("/battle/vault", battle.Vault)
+	api.POST("/battle/courier", battle.Courier)
+	api.POST("/battle/assault", battle.Assault)
+	api.POST("/battle/familiars", battle.Familiars)
+
+	// モック（Lv20の相手役・変更不要）
+	api.GET("/mock/guild", battle.MockGuild)
 
 	// クエスト
 	api.POST("/quests/gather", quest.Gather)
 
-	// デバッグ（Lv9/Lv17 メモリ・goroutine観測、Lv24 DBプール観測用）
+	// デバッグ（Lv22/Lv23 メモリ・goroutine観測用）
 	api.GET("/debug/memory", debug.Memory)
-	api.GET("/debug/db", debug.DBStats)
 }

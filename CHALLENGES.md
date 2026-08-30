@@ -1,6 +1,6 @@
 # Gopher Slayer — Optional Challenges
 
-本編のワークショップタスク（Tasks.md の Lv1〜Lv25）をクリアしたら、以下の中から好きなものに挑戦しよう。
+本編のワークショップタスク（Tasks.md の Lv1〜Lv17）をクリアしたら、以下の中から好きなものに挑戦しよう。
 すべて任意。興味・レベルに合わせて自由に選んでください。
 
 難易度の目安：★ = 30分〜1時間 / ★★★ = 半日 / ★★★★★ = 1日以上
@@ -12,6 +12,7 @@
 - [テスト](#テスト)
 - [アーキテクチャ・設計](#アーキテクチャ設計)
 - [データベース](#データベース)
+- [Go 言語深掘り](#go-言語深掘り)
 - [API 品質・ミドルウェア](#api-品質ミドルウェア)
 - [可観測性](#可観測性)
 - [新機能追加](#新機能追加)
@@ -486,6 +487,82 @@ ALTER TABLE heroes ADD COLUMN weapon_id INT NULL REFERENCES weapons(id);
 ```
 
 武器装備で攻撃力が変わるよう `battle_service.go` を修正し、`GET /api/hero` のレスポンスに武器情報を含める。
+
+---
+
+## Go 言語深掘り
+
+本編のレベルには入っていない、ターミナル中心のGo開発体験。ゲーム画面は変わらないが実務で必ず役に立つ。
+
+### G-1: context.Context を全層に伝播させる
+
+**難易度:** ★★★
+**学べること:** context の役割（タイムアウト・キャンセルの伝播）, Go の慣用句
+
+handler → service → repository の全関数に `ctx context.Context` を第1引数で追加し、`QueryRow` を `QueryRowContext` に置き換える。`curl --max-time 1` で切断したときにDBクエリが止まることを確認する。
+
+---
+
+### G-3: Graceful Shutdown を実装する
+
+**難易度:** ★★
+**学べること:** OSシグナルのハンドリング, `e.Shutdown(ctx)`, 進行中リクエストの保護
+
+`cmd/main.go` に `signal.Notify` を追加し、Ctrl+C で処理中のリクエストを待ってから終了するようにする。
+
+---
+
+### G-4: 構造化ログ（slog）に置き換える
+
+**難易度:** ★★
+**学べること:** Go 1.21 標準の `log/slog`, ログレベル管理
+
+`cmd/main.go` と `pkg/db/conn.go` の `log.Printf` を `slog.Info` / `slog.Warn` の構造化ログに置き換える。
+
+---
+
+### G-5: ジェネリクスで重複関数をまとめる
+
+**難易度:** ★★
+**学べること:** 型パラメータ, `cmp.Ordered`
+
+`MaxInt(a, b int)` と `MaxFloat64(a, b float64)` のような型違いの重複関数を自分で書き、`Max[T cmp.Ordered](a, b T) T` の1つにまとめてテストする。
+
+---
+
+### G-6: slices パッケージでリファクタする
+
+**難易度:** ★★
+**学べること:** `slices.SortFunc` / `slices.ContainsFunc` / `cmp.Compare`（Go 1.21）
+
+敵一覧を攻撃力順に並べる手書きバブルソートを書いてから、`slices.SortFunc` に置き換える。テストで挙動が変わらないことを守りながらリファクタする。
+
+---
+
+### G-7: testing/synctest で時間依存テストを書く
+
+**難易度:** ★★★★
+**学べること:** `testing/synctest`（Go 1.25）, 仮想時間, goroutineリークの検出
+
+Lv11 の `InterruptCast`（2秒タイムアウト）のテストを synctest で書くと仮想時間で一瞬で終わる。unbuffered channel のままだと synctest が送信側goroutineのリークを deadlock として暴いてくれる。※ Go 1.25 が必要（go.mod の更新も）
+
+---
+
+### G-8: コネクションプールを設定する
+
+**難易度:** ★★
+**学べること:** `database/sql` の接続管理, `db.Stats()`
+
+`pkg/db/conn.go` に `SetMaxOpenConns` / `SetMaxIdleConns` / `SetConnMaxLifetime` を設定し、`db.Stats()` を返すデバッグAPIを自作して負荷時の挙動を観測する。
+
+---
+
+### G-9: go:embed で単一バイナリにする
+
+**難易度:** ★★★
+**学べること:** `//go:embed`（`all:` プレフィックス）, `embed.FS`
+
+リポジトリ直下に `//go:embed all:_frontend` のファイルを作り、`e.StaticFS` に差し替えて、ソースのない場所でもバイナリ単体でゲームが動くようにする。
 
 ---
 
@@ -1027,6 +1104,14 @@ erDiagram
 | D-3 Migration         | [ ] | |
 | D-4 Redis             | [ ] | |
 | D-5 DB 変更           | [ ] | |
+| G-1 context 伝播      | [ ] | |
+| G-3 Graceful Shutdown | [ ] | |
+| G-4 slog              | [ ] | |
+| G-5 ジェネリクス      | [ ] | |
+| G-6 slices            | [ ] | |
+| G-7 synctest          | [ ] | |
+| G-8 コネクションプール | [ ] | |
+| G-9 go:embed          | [ ] | |
 | M-1 エラー統一        | [ ] | |
 | M-2 バリデーション    | [ ] | |
 | M-3 JWT 認証          | [ ] | |

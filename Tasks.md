@@ -2,308 +2,170 @@
 
 各レベルで「動かないゲームのバグを直す」ことで、GoのAPI開発を体験する。
 
-| 種別 | 説明 |
-|------|------|
-| **ステージ** | ゲームを進めるために順番にクリアする |
-| **タスク** | ステージとは独立して挑戦できる |
+- **Lv1〜Lv5**：ステージをクリアしながら順番に進む。バグを直さないと先へ進めない
+- **Lv6〜Lv28**：全ステージクリア（EXP 500）でLv6の敵が現れる。カードをクリックすると敵とのエンカウントが始まり、**「たたかう」を押すと攻撃＝クリア判定**。バグを直せていれば攻撃が通って敵のHPを削り倒せる（直せていないと敵に反撃される）。倒すと **EXP +100** で次の敵が解放される（Lv1〜5と同じ一本道）
+- 失敗してもその場でコードを直せば、画面を出ずにもう一度「たたかう」で再挑戦できる（`make start` の air が自動で反映する）
+- チャレンジの敵もDB（`challenge_enemies` テーブル）に入っている
+- 各カードの「ヒント」ボタンで、修正すべきファイルと確認コマンドがいつでも見られる
+- 答えは見ずにまず自力で。どうしても詰まったら講師に聞こう（答えは ANSWER.md にある）
 
 ---
 
 # ステージ
 
-## Lv1：ヒーローが攻撃しても0ダメージ
+## Lv6：姿の見えない敵
 
-**症状：** 攻撃ボタンを押しても「0 ダメージを与えた！」と表示され、敵のHPが減らない。
+**症状：** ステルスGopherを偵察しても、名前もHPも「？？？」のまま何も見えない（APIのJSONが空っぽ `{}` で返ってくる）。
 
-**修正箇所：** `pkg/server/service/battle.go`
+**修正箇所：** `pkg/server/service/stealth.go` の `ScoutedEnemy`
 
-```go
-// ダメージを計算する関数
-// この関数を完成させてください
-func CalculateDamage(attack int) int {
-    return 0 // ← ここを修正する
-}
-```
+**ヒント：**
+- Goでは**大文字で始まる名前だけがパッケージの外から見える**（公開される）
+- フィールドが小文字だと `encoding/json` からも見えず、JSONに出力されない
+- フィールド名を大文字にして、jsonタグ（`` `json:"name"` ``）でJSONでのキー名を指定しよう
 
-**やること：** `return 0` を、攻撃力をもとにダメージを返す処理に書き換える。
+**クリア判定：** チャレンジで偵察結果に名前・HP・攻撃力が表示されればOK。
 
-**完成イメージ：**
-```go
-func CalculateDamage(attack int) int {
-    return attack // attackの値をそのまま返すだけでもOK！
-}
-```
-
-**体験できること：** 関数の役割・戻り値の理解
+**体験できること：** 大文字/小文字による公開・非公開、structのjsonタグ
 
 ---
 
-## Lv2：ステージをクリアしても経験値が増えない
+## Lv7：鏡の鎧を打ち破れ
 
-**症状：** ステージをクリアすると「EXP +40」と画面には出るが、リロードするとEXPが0のままになっている。
+**症状：** 鏡の鎧のGopherに何度攻撃しても、HPが90のまま1も減らない。攻撃はすべて「鏡に映ったコピー」に吸われている。
 
-**修正箇所：** `pkg/server/handler/stage.go` の `ClearStage`
+**修正箇所：** `pkg/server/service/mirror.go` の `TakeDamage`
 
-```go
-newExp := hero.Experience + expGained
+**ヒント：**
+- `func (k MirrorKnight) TakeDamage(...)` は**値レシーバ**。メソッドが受け取るのは本体の**コピー**で、コピーのHPを減らしても本体は変わらない
+- 本体を変更したいメソッドは**ポインタレシーバ** `func (k *MirrorKnight)` にする
 
-// ← ここにDBへの保存処理が抜けている
+**クリア判定：** チャレンジで3回の攻撃後にHPが 90 → 0 になればOK。
 
-return c.JSON(http.StatusOK, service.ClearStageResponse{...})
-```
-
-**やること：** `h.heroRepo.UpdateExperience()` を呼び出す処理を追加する。
-参考として、`pkg/server/repository/hero.go` の `UpdateName()` を見てみよう。
-
-**完成イメージ：**
-```go
-// DBに経験値を保存する
-if err := h.heroRepo.UpdateExperience(newExp); err != nil {
-    return c.JSON(http.StatusInternalServerError, map[string]string{"error": "経験値の更新に失敗しました"})
-}
-```
-
-**体験できること：** DBへの書き込み（UPDATE）、Backendの醍醐味
+**体験できること：** 値レシーバとポインタレシーバの違い、Goの値渡しの基本
 
 ---
 
-## Lv3：ラストステージのボスが強すぎて詰んだ
+## Lv8：戦利品を袋に詰めろ
 
-**症状：** 「ドラゴンの巣」ステージの「ボスドラゴン」の攻撃力が50もあり、どうやっても勝てない。
-ゲーム画面の「HP編集」ボタンを押すとエラーになる。
-`PUT /api/hero/hp` というAPIを呼んでいるが、このエンドポイントが存在しないためだ。
+**症状：** 倒した敵から戦利品を拾おうとすると、サーバーがエラーを起こす（panic）。
 
-**やること：** ヒーローのHPを編集できるルートを追加する。
+**修正箇所：** `pkg/server/service/loot.go` の `CollectLoot`
 
-### Step 1：ルートを登録する（`pkg/server/handler/setting.go`）
+**ヒント：**
+- `var bag map[string]int` は宣言しただけで **nil**（袋そのものが存在しない）
+- nil の map は「読む」のは安全だが「**書き込むと panic**」する
+- `make(map[string]int)` で袋を用意してから詰めよう
 
-```go
-// ヒーロー
-api.GET("/hero", hero.GetHero)
-api.PUT("/hero/name", hero.UpdateName)
-api.PUT("/hero/experience", hero.UpdateExperience)
-// ← ここにHP更新のルートを追加する
-```
+**クリア判定：** チャレンジで戦利品（薬草×2 金貨×3 魔石×1）が表示されればOK。
 
-`hero.UpdateHP` はすでに実装済み。以下の1行を追加しよう。
+**体験できること：** nil map の罠、`make` による初期化
 
-```go
-api.PUT("/hero/hp", hero.UpdateHP)
-```
+---
 
-### Step 2：動作確認
+## Lv9：巨神Gopherを検分せよ
 
-ルートを追加したら、ゲーム画面の「HP編集」ボタンでHPを増やしてからボス戦に挑もう。
+**症状：** 25ダメージ×30回＝750のはずが、合計ダメージが **-18** になっている。巨神がむしろ元気になっていないか？
 
-curl でも確認できる：
+**修正箇所：** `pkg/server/service/titan.go` の `ChallengeTitan`
+
+**ヒント：**
+- 合計を `int8` で数えている。int8 に入るのは **-128〜127** だけ
+- 範囲を超えると値がぐるっと一周する（オーバーフロー）。Goは実行時に警告してくれない
+- 普通に数えるなら `int` を使おう
+
+**クリア判定：** チャレンジで合計ダメージが 750 になればOK。
+
+**体験できること：** Goの整数型（int8/int16/int32/int/…）と値の範囲、オーバーフロー
+
+---
+
+## Lv10：不死身の呪いを解け
+
+**症状：** 致死ダメージを受けてもHPが1残って死なない（GAME OVERにならない）。チャレンジ「不死身の呪い」で判定できる。
+
+**修正箇所：** `pkg/server/service/battle.go` の `ApplyDamage`
+
+**やること：** いきなりコードを読まず、**テストを書いてバグを見つけよう**。
+
+1. `pkg/server/service/battle_test.go` のテーブルにケースを追加する（HPが残るケース・ちょうど0のケース・致死のケース…）
+2. テストを実行して、失敗するケースからバグを特定する
 
 ```bash
-curl -X PUT http://localhost:8080/api/hero/hp \
-  -H "Content-Type: application/json" \
-  -d '{"hp": 500}'
+go test ./pkg/server/service/ -run TestApplyDamage -v
 ```
 
-### Step 3：コードの流れを追う（理解を深めたい人向け）
+3. `ApplyDamage` を修正してテストが通ることを確認する
 
-```
-pkg/server/handler/setting.go（ルーティング）
-  └─ pkg/server/handler/hero.go の UpdateHP()
-       └─ pkg/server/repository/hero.go の UpdateHP()
-            └─ UPDATE heroes SET hp = ? WHERE id = 1
-```
+**クリア判定：** チャレンジで「致死ダメージ後のHP」が0になればOK（テストも全部通ること）。
 
-**体験できること：** ルーティング追加、リクエストがDBに届くまでの流れ
+**体験できること：** テーブル駆動テスト、`go test` の使い方、テストでバグを発見する体験
 
 ---
 
-## Lv4：デーモンへの攻撃が反転する（Goを触ったことがある人向け）
+## Lv11：討伐碑に名を刻め
 
-**症状：** 「地獄の門」ステージの「デーモン」を攻撃すると、なぜかデーモンのHPが**増える**。
+**症状：** 討伐碑に刻んだ敵の名前が「ボ��」のように文字化けしている（文字化けの呪い！）。
 
-**やること：** バグをコードの中から見つけて修正する。
+**修正箇所：** `pkg/server/service/naming.go` の `EngraveName`
 
-**修正箇所：** `pkg/server/handler/battle.go` の `Attack`
+**ヒント：**
+- Goの string への `len()` は「文字数」ではなく「**バイト数**」を返す。`s[:5]` も先頭**5バイト**で切る
+- 日本語は1文字が3バイトなので、文字のド真ん中でちぎれて壊れる
+- `[]rune(name)` に変換すると「1文字＝1要素」になる。runeで数えて切り詰め、`string(...)` で戻そう
 
-```go
-func (h *BattleHandler) Attack(c echo.Context) error {
-    // ← バグが仕込まれている。コードをよく読んで見つけよう。
-}
-```
+**クリア判定：** チャレンジで碑文が「ボスドラゴ」のように正しく5文字で刻まれればOK。
 
-**体験できること：** ハンドラー層のデバッグ、処理の流れを追う読解力
-
----
-
-## Lv5：ボスドラゴンの攻撃だけ遅い（Go経験者向け）
-
-**症状：** 「ドラゴンの巣」ステージの「ボスドラゴン」の攻撃だけ、なぜか遅い。
-Lv4 のバグは直したはずなのに…。
-
-**やること：** バグをコードの中から見つけて修正する。
-
-- ヒント：サービス層だけでなく、ハンドラー層も確認してみよう。
-- ヒント：リクエストはどのファイルをたどって処理されるか？
-
-**コードの流れ：**
-
-```
-pkg/server/handler/setting.go（ルーティング）
-  └─ pkg/server/handler/battle.go の EnemyAttack()  ← ここも確認！
-       └─ pkg/server/service/battle.go の EnemyAttack()  ← ここも確認！
-```
-
-**動作確認（curl）：**
-
-```bash
-# 修正前は遅い、修正後はすぐ返ってくる
-curl -X POST http://localhost:8080/api/battle/enemy-attack \
-  -H "Content-Type: application/json" \
-  -d '{"enemy_attack": 50, "enemy_name": "ボスドラゴン", "hero_hp": 100}'
-```
-
-**体験できること：** サービス層とハンドラー層をまたいだデバッグ
+**体験できること：** string と rune と byte の関係、UTF-8と日本語の扱い
 
 ---
 
-## Lv6：封印を並列に解かないとボスと戦えない（Go経験者向け）
+## Lv12：分身Gopherを見破れ
 
-**症状：** 「ドラゴンの巣」に入ろうとすると「封印解除に失敗！修正してから再挑戦しよう。」と表示されてバトルが始まらない。
+**症状：** 分身だけを半分の強さに弱体化したはずが、**本体まで一緒に弱くなっている**。本体と分身の区別がつかない！
 
-封印を解く処理が遅すぎて3秒のタイムアウトに引っかかっている。
+**修正箇所：** `pkg/server/service/mirage.go` の `ChallengeMirage`
 
-**やること：** `pkg/server/service/seal.go` の `BreakAllSeals` を goroutine と sync.WaitGroup を使って並列化する。
+**ヒント：**
+- `mirage = body` はコピーではない。スライスは「配列を指す窓」なので、**同じ配列を2つの窓から見ている**状態になる
+- 片方への変更はもう片方にも見える
+- 独立したコピーが欲しいときは `slices.Clone(body)`（Go 1.21）か `make` + `copy` を使う
 
-### ヒント
+**クリア判定：** チャレンジで本体が 50/30/20 のまま、分身だけ 25/15/10 になればOK。
 
-```go
-// 今のコード（順番に解く → 5秒かかる）
-for i, seal := range seals {
-    time.Sleep(1 * time.Second)
-    results[i] = seal + "を解いた！"
-}
-
-// 並列にすると約1秒で完了する
-var wg sync.WaitGroup
-for i, seal := range seals {
-    wg.Add(1)
-    go func(i int, seal string) {
-        defer wg.Done()
-        // ...
-    }(i, seal)
-}
-wg.Wait()
-```
-
-**動作確認（curl）：**
-
-```bash
-# 修正後は1秒以内に200 OKが返ってくる
-curl -X POST http://localhost:8080/api/stages/5/challenge
-```
-
-**体験できること：** goroutine、sync.WaitGroup、並列処理による高速化
+**体験できること：** スライスの内部構造（共有される底配列）、`slices.Clone`
 
 ---
 
-## Lv8：ゴブリンの群れを一掃せよ（Go経験者向け）
+## Lv13：討伐隊を整列させろ
 
-**症状：** ステージ選択画面の「ゴブリンの群れを一掃せよ」に挑むと、100体倒したはずなのに討伐数の記録が合わない。
+**症状：** 討伐隊の隊列を組むたびに、並び順が毎回バラバラになる。烏合の衆だ！
 
-**修正箇所：** `pkg/server/service/horde.go` の `SlayHorde`
+**修正箇所：** `pkg/server/service/formation.go` の `FormBattleLine`
 
-100体の討伐を goroutine で同時に行っているが、討伐数カウンタ `killCount` を複数の goroutine が **mutex なし** で読み書きしている（データ競合 / Race Condition）。
+**ヒント：**
+- Goの map を `for range` で回す順序は「**毎回ランダム**」と言語仕様で決まっている（うっかり順序に依存したコードを書かせないため）
+- 順序が必要なら、取り出した後に自分で並べ替える
+- `slices.Sort(line)`（Go 1.21）で文字列スライスを辞書順にソートできる
 
-**やること：**
+**クリア判定：** チャレンジで5回隊列を組んで、毎回同じ順序になればOK。
 
-1. データ競合を検出する
-
-```bash
-go test -race ./...
-```
-
-2. `sync.Mutex` でカウンタを守る
-
-```go
-var mu sync.Mutex
-
-go func() {
-    defer wg.Done()
-    mu.Lock()
-    killCount++
-    mu.Unlock()
-}()
-```
-
-**動作確認：** ゲーム画面のチャレンジで「討伐数 100/100」になればOK。curl でも確認できる：
-
-```bash
-curl -X POST http://localhost:8080/api/battle/horde
-```
-
-**体験できること：** データ競合（Race Condition）、`go test -race`、`sync.Mutex`
+**体験できること：** mapの反復順序がランダムである理由、`slices.Sort`
 
 ---
 
-## Lv9：倒した敵の怨念を祓え（Go経験者向け）
+## Lv14：幻のステージの番人
 
-**症状：** 戦うたびにバトル画面右上の「サーバーメモリ」が増え続ける。「怨念祓いの儀式」に挑むと、怨念（メモリ）が溜まりすぎていて祓えない。
-
-**修正箇所：** `pkg/server/service/battle.go` の `HeroAttack` 周辺
-
-グローバル変数 `grudges` に攻撃のたびに5MBのデータを append しており、**参照が残り続けるため GC がメモリを回収できない**（メモリリーク）。
-
-**やること：**
-
-1. メモリの増加を観測する
-
-```bash
-# APIで観測
-curl http://localhost:8080/api/debug/memory
-
-# GCの動きを観測しながら起動（gctrace）
-GODEBUG=gctrace=1 make dev
-```
-
-2. リーク箇所（グローバル変数への append）を見つけて削除する
-3. サーバーを再起動して、戦ってもメモリが増えないことを確認する
-
-**動作確認：** ゲーム画面の「怨念祓いの儀式」チャレンジが成功すればOK（20連戦後にメモリ50MB未満）。
-
-**体験できること：** GCの仕組み（参照が残ると回収されない）、メモリリーク、`runtime.MemStats`、`GODEBUG=gctrace=1`
-
-**発展：** `net/http/pprof` を導入して `go tool pprof` でヒーププロファイルを取ってみよう。
-
----
-
-## Lv10：幻のステージの番人（Go経験者向け）
-
-**症状：** ステージ選択画面の「幻のステージの番人」に挑むと、サーバーで panic が発生する。サーバーログにスタックトレースが出ている。
+**症状：** チャレンジで存在しないステージに挑むと、サーバーで panic が発生する（サーバーログにスタックトレースが出る）。
 
 **修正箇所：** `pkg/server/repository/stage.go` の `GetByID`
 
-```go
-err := row.Scan(...)
-if err != nil {
-    return nil, nil // ← エラーを握りつぶしている
-}
-```
+**ヒント：**
+- エラーを**握りつぶして `nil, nil` を返している**箇所がある
+- 呼び出し側（`ClearStage`）は「エラーがなければ結果は使える」と信じているので、nil のステージを参照して panic する
+- エラーはそのまま返すのが基本（`sql.ErrNoRows` が「見つからない」を表す）
 
-エラーを握りつぶして `nil, nil` を返しているため、存在しないステージIDでは呼び出し側（`ClearStage`）が **nil ポインタを参照して panic** する。
-
-**やること：** エラーをそのまま返すように修正する。
-
-```go
-if err != nil {
-    return nil, err
-}
-```
-
-**動作確認：**
-
-```bash
-# 修正前: panic（Internal Server Error）/ 修正後: 「ステージが見つかりません」
-curl -X POST http://localhost:8080/api/stages/999/clear
-```
+**クリア判定：** チャレンジで「番人は静かに首を振った（正しくエラーが返った）」になればOK。
 
 **体験できること：** nil ポインタ参照と panic、エラーを握りつぶす危険性、`sql.ErrNoRows`
 
@@ -311,549 +173,280 @@ curl -X POST http://localhost:8080/api/stages/999/clear
 
 ---
 
-## Lv11：ボスの詠唱を中断せよ（Go経験者向け）
+## Lv15：宝物庫の扉を閉めろ
 
-**症状：** 「ボスの詠唱を中断せよ」に挑むと、サーバーが10秒間固まって中断が間に合わない。
+**症状：** 盗賊Gopherが宝物庫を覗くたびに、扉（DB接続）が開きっぱなしになりどんどん溜まっていく。15回覗くと接続が15個増える。
+
+**修正箇所：** `pkg/server/repository/enemy.go` の `PeekVault`
+
+**ヒント：**
+- `db.Query` が返す `rows` は、使い終わったら **Close** しないとDB接続が返却されない
+- 今回は先頭の1件だけ見て早めに `return` しているため、自動クローズも効かない
+- Goの作法は「リソースを取得したら、**その直後に `defer rows.Close()`**」。return がどこにあっても必ず閉まる
+
+**クリア判定：** チャレンジで15回覗いても接続の増加が +0 ならOK。
+
+**体験できること：** `defer` によるリソース解放、`rows.Close()`、コネクションリーク
+
+---
+
+## Lv16：封印を並列に解いてボスと戦う
+
+**症状：** チャレンジで封印解除を試みると、5秒かかって「封印解除に失敗！」と表示される（制限時間3秒）。5つの封印を1つずつ順番に解いているためだ。
+
+**修正箇所：** `pkg/server/service/seal.go` の `BreakAllSeals`
+
+**ヒント：**
+- 各封印は解くのに1秒かかる。**5つを並列に解けば約1秒**で終わる
+- `go func(...)` でgoroutineを起動し、`sync.WaitGroup` の `Add` / `Done` / `Wait` で全員の完了を待つ
+- `results[i]` への書き込みはインデックスが分かれているので競合しない
+
+**クリア判定：** チャレンジで5つの封印がすべて「解いた！」になればOK。
+
+**体験できること：** goroutine、sync.WaitGroup、並列処理による高速化
+
+---
+
+## Lv17：ゴブリンの群れを一掃せよ
+
+**症状：** チャレンジで100体を同時討伐すると、討伐数が「16/100」のようにズレる。
+
+**修正箇所：** `pkg/server/service/horde.go` の `SlayHorde`
+
+**ヒント：**
+- 100個のgoroutineが、カウンタ `killCount` を**保護なしで同時に読み書き**している（データ競合 / Race Condition）
+- まず検出してみよう：
+
+```bash
+go test -race ./...
+```
+
+- `sync.Mutex` の `Lock` / `Unlock` でカウンタへのアクセスを守る（`sync/atomic` でもよい）
+
+**クリア判定：** チャレンジで「討伐数 100/100」になればOK。`go test -race ./...` も通ること。
+
+**体験できること：** データ競合（Race Condition）、`go test -race`、`sync.Mutex`
+
+---
+
+## Lv18：ボスの詠唱を中断せよ
+
+**症状：** チャレンジで詠唱中断を試みると、サーバーが10秒間固まって間に合わない。
 
 **修正箇所：** `pkg/server/service/spell.go` の `InterruptCast`
 
-```go
-// 今のコード（詠唱完了をただ待つだけ → 10秒固まる）
-spell := <-castSpell()
-return spell + " が発動してしまった…", false
-```
+**ヒント：**
+- 今は詠唱完了の channel を `<-castSpell()` で**ただ待っているだけ**
+- `select` を使うと「複数のchannelのうち先に来た方」を選べる
+- `time.After(2 * time.Second)` は「2秒後に届くchannel」を返す。詠唱完了とどちらが先か競わせよう
 
-**やること：** `select` と `time.After` を使って **2秒でタイムアウト** させ、「詠唱を中断させた！」を返す。
-
-```go
-select {
-case spell := <-castSpell():
-    return spell + " が発動してしまった…", false
-case <-time.After(2 * time.Second):
-    return "詠唱を中断させた！", true
-}
-```
-
-**動作確認：**
-
-```bash
-# 修正前は10秒待たされる、修正後は2秒で返ってくる
-curl -X POST http://localhost:8080/api/battle/interrupt
-```
+**クリア判定：** チャレンジで2秒以内に「詠唱を中断させた！」になればOK。
 
 **体験できること：** channel、`select`、`time.After` によるタイムアウト制御
 
 ---
 
-## Lv16：ギルドの依頼を同時にこなせ（Go経験者向け）
+## Lv19：ギルドの依頼を同時にこなせ
 
-**症状：** 「ギルドの依頼調査」に挑むと、3つの依頼を1件ずつ調査して3秒かかり、ギルドの受付時間（2秒）に間に合わない。
+**症状：** チャレンジで3つの依頼調査が1件ずつ直列に走り（計3秒）、ギルドの受付時間（2秒）に間に合わない。
 
 **修正箇所：** `pkg/server/service/quest.go` の `GatherQuestReports`
 
-**やること：** `golang.org/x/sync/errgroup` で3つの調査を並列化する。Lv6 の `sync.WaitGroup` と違い、**どれか1件でも失敗したら全体をエラーにできる**のがポイント。
+**ヒント：**
+- Lv16と同じ並列化だが、今回は**エラーを返す関数**を並列にする。`sync.WaitGroup` ではエラーを集められない
+- `errgroup.Group` の `Go` / `Wait` を使うと「どれか1件でも失敗したら全体をエラーにする」が書ける。まず導入から：
 
 ```bash
 go get golang.org/x/sync/errgroup
 ```
 
-```go
-g := new(errgroup.Group)
-for i, quest := range quests {
-    g.Go(func() error {
-        report, err := investigate(quest)
-        if err != nil {
-            return err
-        }
-        reports[i] = report
-        return nil
-    })
-}
-if err := g.Wait(); err != nil {
-    return nil, err
-}
-```
+- Go 1.22 以降はループ変数をそのままクロージャで使ってよい（イテレーションごとに別変数になる）
 
-Go 1.22 以降はループ変数 `i` / `quest` をそのままクロージャで使える（イテレーションごとに新しい変数になる）。
-
-**動作確認：**
-
-```bash
-# 修正前は受付が閉まる（408）、修正後は約1秒で200
-curl -X POST http://localhost:8080/api/quests/gather
-```
+**クリア判定：** チャレンジで3つの依頼がすべて「完了！」になればOK（約1秒）。
 
 **体験できること：** `errgroup` によるエラー付き並列処理、Go 1.22 のループ変数セマンティクス
 
 ---
 
-## Lv17：悪霊の門を閉じろ（Go経験者向け）
+## Lv20：眠るギルドに見切りをつけろ
 
-**症状：** 敵の攻撃のたびに悪霊（goroutine）が漏れ出し、増え続ける。「悪霊の門」チャレンジ（30連戦して goroutine 数を観測）に失敗する。
+**症状：** 遠方のギルド（居眠り中）へ伝令を送ると、返事を**永遠に待ち続けて**帰ってこない。
+
+**修正箇所：** `pkg/server/service/courier.go` の `SendCourier`
+
+**ヒント：**
+- `http.Client{}` はデフォルトで**タイムアウトなし**。相手が応答しなければ永遠に待つ
+- `http.Client{Timeout: 2 * time.Second}` を設定すると、2秒で `client.Get` がエラーを返す
+- 外部APIを呼ぶときにタイムアウトを設定するのは実務の鉄則
+
+**クリア判定：** チャレンジで伝令が約2秒で見切りをつけて帰還すればOK。
+
+**体験できること：** `http.Client` でのHTTPリクエスト、タイムアウト設定の重要性
+
+---
+
+## Lv21：城門の大渋滞を制圧せよ
+
+**症状：** 100人の騎士が一斉に突撃して、狭い城門（同時5人まで）に**同時100人**が殺到し大渋滞になっている。
+
+**修正箇所：** `pkg/server/service/assault.go` の `LaunchAssault`
+
+**ヒント：**
+- goroutineを起動するのは簡単だが、**同時実行数を制限しない**とリソースが溢れる（実務ではDB接続や外部APIの制限を守るのに必須）
+- **バッファ付きchannelをセマフォ（入場券）として使う**のがGoの定番パターン：
+
+```go
+sem := make(chan struct{}, 5)
+sem <- struct{}{} // 入場券を取る（満員なら空くまで待つ）
+<-sem             // 入場券を返す
+```
+
+**クリア判定：** チャレンジで同時突撃数の最大が 5/5 以下ならOK。
+
+**体験できること：** バッファ付きchannel、セマフォパターンによる同時実行数の制限
+
+---
+
+## Lv22：悪霊の門を閉じろ
+
+**症状：** チャレンジ「悪霊の門」（30連戦してgoroutineの増加を観測）で、悪霊（goroutine）が30体漏れ出す。
 
 **修正箇所：** `pkg/server/service/battle.go` の `summonSpirit`
 
-閉じられることのない channel を永遠に待つ goroutine を、リクエストのたびに起動している（**goroutineリーク**）。goroutine はGCでは回収されない。
-
-**やること：**
-
-1. goroutine 数の増加を観測する
+**ヒント：**
+- 敵の攻撃のたびに「**閉じられることのないchannelを待ち続けるgoroutine**」が起動されている
+- goroutine はGCでは回収されない。終了させる手段のないgoroutineは永遠に残る（goroutineリーク）
+- 観測してみよう：
 
 ```bash
 curl http://localhost:8080/api/debug/memory   # num_goroutine に注目
 ```
 
-2. `summonSpirit()` の呼び出しを削除する（または門となる channel を `close` して悪霊を解放する）
+- 対処は「そもそも起動しない」か「channel を close して解放する」
 
-**動作確認：** 「悪霊の門」チャレンジで、30連戦しても goroutine がほぼ増えなければOK。
+**クリア判定：** チャレンジで30連戦してもgoroutineがほぼ増えなければOK。
 
 **体験できること：** goroutineリーク、goroutineのライフサイクル、`runtime.NumGoroutine`
 
 ---
 
-## Lv18：呪いの爆弾を解除せよ（Go経験者向け）
+## Lv23：倒した敵の怨念を祓え
 
-**症状：** 「呪いの爆弾」に挑むと、1秒後に **サーバーごと落ちる**。（`make dev` の air が自動で再起動してくれる）
+**症状：** 戦うたびにバトル画面右上の「サーバーメモリ」が増え続ける。チャレンジ「怨念祓いの儀式」（20連戦→メモリ50MB未満なら成功）に失敗する。
+
+**修正箇所：** `pkg/server/service/battle.go` の `HeroAttack` 周辺
+
+**ヒント：**
+- グローバル変数に**参照が残り続けるデータをappend**している。GCは「どこからも参照されていないメモリ」しか回収できない
+- 観測してから直そう：
+
+```bash
+curl http://localhost:8080/api/debug/memory      # heap_alloc_mb に注目
+GODEBUG=gctrace=1 make start                     # GCの動きをログで見る
+```
+
+- リーク箇所を削除したら、**サーバーを再起動**して確認（溜まった分は再起動でしか消えない）
+
+**クリア判定：** チャレンジ「怨念祓いの儀式」が成功すればOK。
+
+**体験できること：** GCの仕組み、メモリリーク、`runtime.MemStats`、`GODEBUG=gctrace=1`
+
+**発展：** `net/http/pprof` を導入して `go tool pprof` でヒーププロファイルを取ってみよう。
+
+---
+
+## Lv24：使い魔を家に帰せ
+
+**症状：** 使い魔を10体召喚すると、仕事が終わっても**全員帰らずに永遠に働き続ける**（goroutineが増えたまま）。
+
+**修正箇所：** `pkg/server/service/familiar.go`
+
+**ヒント：**
+- Lv22の悪霊は「そもそも呼ばない」で解決したが、今回は**働いてもらった後に止めたい**
+- goroutineに「もう帰っていいよ」と伝える標準の道具が **context**：
+  1. `ctx, cancel := context.WithCancel(context.Background())` で合図付きのctxを作る
+  2. 使い魔（goroutine）はループ内の `select` で `<-ctx.Done()` を確認し、合図が来たら `return`
+  3. 仕事が終わったら `cancel()` を呼んで全員に合図を送る
+
+**クリア判定：** チャレンジで召喚後に帰らない使い魔が +0 体ならOK。
+
+**体験できること：** `context.WithCancel`、goroutineのライフサイクル管理、`select` + `ctx.Done()`
+
+---
+
+## Lv25：呪いの爆弾を解除せよ
+
+**症状：** チャレンジで解除を試みると、1秒後に**サーバーごと落ちる**（`make start` の air が自動で再起動してくれる）。
 
 **修正箇所：** `pkg/server/service/curse.go` の `DefuseCurse`
 
-Echo には Recover ミドルウェアが入っているのに、なぜサーバーごと落ちるのか？
-—— Recover が守れるのは**リクエストを処理している goroutine だけ**。自分で `go func()` した goroutine の中の panic は誰も拾えず、プロセス全体が死ぬ。
+**ヒント：**
+- Echo には Recover ミドルウェアが入っているのに、なぜ落ちる？——Recover が守れるのは**リクエストを処理しているgoroutineだけ**
+- 自分で `go func()` したgoroutineの中の panic は誰も拾えず、プロセス全体が死ぬ
+- goroutineの先頭で `defer` + `recover()` を仕込んで爆発を受け止めよう
 
-**やること：** goroutine の先頭に `defer` + `recover()` を仕込む。
+**クリア判定：** チャレンジで「爆発を受け止めた！サーバーは無事だ！」になればOK。
 
-```go
-go func() {
-    defer func() {
-        if r := recover(); r != nil {
-            log.Printf("爆発を受け止めた: %v", r)
-        }
-    }()
-    time.Sleep(1 * time.Second)
-    panic("呪いの爆弾が爆発した！")
-}()
-```
-
-**動作確認：** チャレンジ実行後もサーバーが生きていればOK。
-
-```bash
-curl -X POST http://localhost:8080/api/battle/defuse && sleep 2 && curl http://localhost:8080/api/hero
-```
-
-**体験できること：** panic / recover、goroutine 内の panic がプロセスを殺すこと、Recover ミドルウェアの守備範囲
+**体験できること：** panic / recover、goroutine内のpanicがプロセスを殺すこと、Recoverミドルウェアの守備範囲
 
 ---
 
-# タスク
+## Lv26：討伐報告書を高速化せよ
 
-## Lv7：テストを書いてバグを見つける（Go経験者向け）
-
-**症状：** ボスドラゴンの攻撃を受けてHPが0になるはずなのに、なぜか1残って死なない。
-
-**やること：** `pkg/server/service/battle_test.go` にテストケースを追加してバグを見つけ、修正する。
-
-### Step 1：テストを書く
-
-`pkg/server/service/battle_test.go` にテストケースを追加しよう。
-
-```go
-tests := []struct {
-    name      string
-    currentHP int
-    damage    int
-    want      int
-}{
-    {"通常のダメージ", 100, 30, 70},
-    // ← ここにケースを追加してバグを見つけよう
-}
-```
-
-### Step 2：テストを実行する
-
-```bash
-go test ./pkg/server/service/ -run TestApplyDamage -v
-```
-
-テストが失敗したら、失敗したケースのヒントをもとにバグを探そう。
-
-### Step 3：バグを修正する
-
-**修正箇所：** `pkg/server/service/battle.go` の `ApplyDamage`
-
-**体験できること：** テーブル駆動テスト、`go test` の使い方、テストでバグを発見する体験
-
----
-
-## Lv12：戦場からの安全な撤退（Go経験者向け）
-
-**症状：** `Ctrl+C` でサーバーを止めると即終了するため、処理中のリクエストが強制切断され、冒険者が戦場に取り残される。
-
-**修正箇所：** `cmd/main.go`
-
-**やること：** OSシグナルを受け取ってから、進行中のリクエストを待って安全に終了する（Graceful Shutdown）。
-
-```go
-// 別goroutineでサーバーを起動する
-go func() {
-    if err := e.Start(":" + cfg.Port); err != nil && err != http.ErrServerClosed {
-        e.Logger.Fatal(err)
-    }
-}()
-
-// Ctrl+C（SIGINT）/ SIGTERM を待つ
-quit := make(chan os.Signal, 1)
-signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
-<-quit
-
-// 10秒以内に進行中のリクエストを処理してから終了する
-ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-defer cancel()
-if err := e.Shutdown(ctx); err != nil {
-    e.Logger.Fatal(err)
-}
-```
-
-**動作確認：** 時間のかかるAPI（例：Lv11修正前の `/api/battle/interrupt`）を処理中に `Ctrl+C` しても、レスポンスが返ってきてからサーバーが終了すればOK。
-
-**体験できること：** OSシグナルのハンドリング、`e.Shutdown(ctx)`、`context.WithTimeout`
-
----
-
-## Lv13：戦闘レポートを高速化せよ（Go経験者向け）
-
-**症状：** 戦闘レポートの生成が遅い。文字列の `+=` 連結は毎回新しい文字列を作り直すため、行数が多いとメモリを大量に消費する。
+**症状：** チャレンジで40000行の討伐記録をまとめると数秒かかり、軍記官が音を上げる（制限時間1秒）。
 
 **修正箇所：** `pkg/server/service/battle.go` の `BuildBattleReport`
 
-### Step 1：ベンチマークで現状を計測する
+**ヒント：**
+- 文字列の `+=` 連結は**毎回新しい文字列を丸ごと作り直す**ため、行数が増えると急激に遅くなる
+- `strings.Builder` の `WriteString` / `String` を使うと1回のバッファ構築で済む
+- ベンチマークで前後を計測すると差が実感できる（`B/op`＝メモリ確保量に注目）：
 
 ```bash
 go test ./pkg/server/service/ -bench BuildBattleReport -benchmem
 ```
 
-`B/op`（1回あたりのメモリ確保量）と `ns/op`（1回あたりの時間）をメモしておこう。
+**クリア判定：** チャレンジで報告書が1秒以内（実際は数ms）に完成すればOK。
 
-### Step 2：strings.Builder に書き換える
-
-```go
-func BuildBattleReport(logs []string) string {
-    var b strings.Builder
-    for _, log := range logs {
-        b.WriteString(log)
-        b.WriteString("\n")
-    }
-    return b.String()
-}
-```
-
-### Step 3：もう一度計測して比較する
-
-`B/op` が大幅に減っていれば成功。
-
-**体験できること：** `go test -bench` / `-benchmem`、`strings.Builder`、文字列連結のコスト
+**体験できること：** 文字列連結のコスト、`strings.Builder`、`go test -bench` / `-benchmem`
 
 ---
 
-## Lv14：冒険の記録を整えよ（Go経験者向け）
+## Lv27：古文書を速読せよ
 
-**症状：** サーバーログが `log.Printf` のテキスト形式で、ログ集計ツールでの検索・集計ができない。
-
-**修正箇所：** `cmd/main.go`、`pkg/db/conn.go`
-
-**やること：** Go 1.21 標準の `log/slog` による構造化ログに置き換える。
-
-```go
-// 変更前
-log.Printf("Database not ready, retrying... (%d/10)", i)
-
-// 変更後
-slog.Warn("database not ready, retrying", "attempt", i, "max", 10)
-```
-
-JSON形式で出したい場合：
-
-```go
-slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
-```
-
-**動作確認：** `make dev` の起動ログが構造化された形式（key=value または JSON）で出力されればOK。
-
-**体験できること：** 構造化ログの利点、`log/slog`、ログレベル（Info/Warn/Error）
-
-**発展：** Echo のアクセスログも slog に差し替えて、リクエストIDを全ログに含めてみよう。
-
----
-
-## Lv15：時空の歪みを断ち切れ（Go経験者向け・最難関）
-
-**症状：** プレイヤーが画面を閉じて（リクエストを中断して）も、サーバーはDBクエリを実行し続けている。キャンセルという概念がどこにも伝わっていない。
-
-**修正箇所：** handler / service / repository の全層
-
-**やること：** `context.Context` を第1引数として全層に伝播させ、DB呼び出しを context 対応版に置き換える。
-
-```go
-// repository（変更前 → 変更後）
-func (r *HeroRepository) Get() (*service.Hero, error)
-func (r *HeroRepository) Get(ctx context.Context) (*service.Hero, error) {
-    row := r.db.QueryRowContext(ctx, `SELECT ...`)
-    ...
-}
-
-// handler では Echo のリクエストから ctx を取り出す
-ctx := c.Request().Context()
-hero, err := h.heroRepo.Get(ctx)
-```
-
-- `QueryRow` → `QueryRowContext` / `Query` → `QueryContext` / `Exec` → `ExecContext`
-- コンパイルエラーを頼りに、呼び出し元を順番に直していこう
-
-**動作確認：**
-
-```bash
-# 1秒で切断してもサーバー側のクエリがキャンセルされることを確認
-curl --max-time 1 http://localhost:8080/api/hero
-```
-
-**体験できること：** `context.Context` の役割（キャンセル・タイムアウトの伝播）、Goの慣用的なAPI設計
-
----
-
-## Lv19：古文書の解読は一度だけ（Go経験者向け）
-
-**症状：** ステージ選択画面を開くたびに「言い伝え」の表示が遅い（毎回800ms）。解読結果は変わらないのに、毎回解読し直している。
+**症状：** ステージ選択画面の「言い伝え」の表示が毎回遅い（800ms）。チャレンジ「古文書の速読」でも2回目の解読すら一瞬で終わらない。解読結果は変わらないのに、毎回解読し直しているためだ。
 
 **修正箇所：** `pkg/server/service/ancient.go` の `DecodeAncientText`
 
-**やること：** `sync.Once` で「最初の1回だけ」解読する。
+**ヒント：**
+- 「最初の1回だけ実行して、2回目以降は結果を使い回す」には `sync.Once` の `Do` が使える
+- `sync.Once` は並行に呼ばれても中の関数を必ず1回しか実行しない（2回目以降は完了を待って即返る）
 
-```go
-var once sync.Once
-var ancientLegend string
+**クリア判定：** チャレンジで2回目の解読が一瞬（200ms未満）ならOK。「言い伝え」の表示も2回目から速くなる。
 
-func DecodeAncientText() string {
-    once.Do(func() {
-        time.Sleep(800 * time.Millisecond)
-        ancientLegend = "『五つの試練の先に、火を吐く王が眠る』"
-    })
-    return ancientLegend
-}
-```
-
-**動作確認：**
-
-```bash
-# 1回目は約800ms、2回目以降は一瞬で返ればOK
-time curl http://localhost:8080/api/legend
-time curl http://localhost:8080/api/legend
-```
-
-**体験できること：** `sync.Once`、一度きりの初期化（遅延初期化）、並行呼び出しでも1回しか実行されない保証
+**体験できること：** `sync.Once`、一度きりの初期化（遅延初期化）
 
 ---
 
-## Lv20：クリティカルの乱数を現代化せよ（Go経験者向け）
+## Lv28：予言者に打ち勝て
 
-**症状：** サーバーを再起動するたび、クリティカル（会心の一撃）が**全く同じ順番**で出る。乱数が予測可能＝チートし放題。
+**症状：** チャレンジで予言者に**会心の一撃の行方を12回すべて予知されてしまう**。乱数が予測可能＝チートし放題ということだ。
 
 **修正箇所：** `pkg/server/service/battle.go` の `RollCritical`
 
-古い `math/rand` を固定シード（`rand.NewSource(1)`）で使っているのが原因。
+**ヒント：**
+- 古い `math/rand` を**固定シード**で使っているため、乱数列が完全に再現できてしまう（予言者は同じシードで「未来」を再現している。`pkg/server/service/prophecy.go` を覗いてみよう）
+- Go 1.22 の `math/rand/v2` は自動でシードされ、`rand.IntN(4)` のようにトップレベル関数がそのまま使える
+- `criticalRolls++` の行は予言者の判定用なので残すこと
 
-**やること：** Go 1.22 で追加された `math/rand/v2` に移行する。
+**クリア判定：** チャレンジで「予言が外れた！」になればOK。curl でも確認できる：
 
-```go
-import "math/rand/v2"
-
-// criticalRNG 変数ごと削除して、こう書くだけでよい
-func RollCritical() bool {
-    return rand.IntN(4) == 0
-}
+```bash
+# 修正前は all_match: true、修正後は false
+curl -X POST http://localhost:8080/api/battle/prophecy
 ```
-
-v2 のポイント：
-- 自動でシードされる（`rand.Seed` は不要。v1 の `Seed` は非推奨になった）
-- `Intn` → `IntN` に改名され、`N()` などジェネリクス対応の関数も追加
-- 生成アルゴリズムも高速・高品質なものに刷新
-
-**動作確認：** サーバーを2回再起動して、それぞれ同じ順番で攻撃したとき、会心の一撃の出方が毎回変わればOK。
 
 **体験できること：** `math/rand/v2`（Go 1.22）、シードと乱数の予測可能性、v1→v2 移行
-
----
-
-## Lv21：二つの関数を一つに束ねよ（Go経験者向け）
-
-**症状：** `pkg/server/service/mathutil.go` に、型が違うだけのほぼ同じ関数 `MaxInt` / `MaxFloat64` が2つある。
-
-**やること：** ジェネリクス（型パラメータ）で1つにまとめる。
-
-```go
-import "cmp"
-
-// [T cmp.Ordered] は「< で比較できる型なら何でも」という意味
-func Max[T cmp.Ordered](a, b T) T {
-    if a > b {
-        return a
-    }
-    return b
-}
-```
-
-呼び出し側は `Max(3, 5)` / `Max(1.5, 2.5)` と書くだけで型は推論される。
-`mathutil_test.go` も新しい `Max` に合わせて書き換えよう。
-
-**動作確認：**
-
-```bash
-go test ./pkg/server/service/ -run TestMax -v
-```
-
-**体験できること：** ジェネリクス（型パラメータ・型推論）、`cmp.Ordered`（Go 1.21）
-
-**発展：** Go 標準にも `max` / `min` 組み込み関数がある（Go 1.21）。違いを調べてみよう。
-
----
-
-## Lv22：手書きループを標準の剣で斬れ（Go経験者向け）
-
-**症状：** `pkg/server/service/ranking.go` に手書きのバブルソートと検索ループがある。動くけれど、車輪の再発明。
-
-**やること：** Go 1.21 で標準入りした `slices` パッケージで置き換える。
-
-```go
-import (
-    "cmp"
-    "slices"
-    "strings"
-)
-
-func SortEnemiesByAttack(enemies []*Enemy) {
-    slices.SortFunc(enemies, func(a, b *Enemy) int {
-        return cmp.Compare(b.Attack, a.Attack) // 降順
-    })
-}
-
-func HasBoss(enemies []*Enemy) bool {
-    return slices.ContainsFunc(enemies, func(e *Enemy) bool {
-        return strings.Contains(e.Name, "ボス")
-    })
-}
-```
-
-**動作確認：** 既存のテストがそのまま通れば、挙動を変えずにリファクタできた証拠。
-
-```bash
-go test ./pkg/server/service/ -run "TestSortEnemiesByAttack|TestHasBoss" -v
-```
-
-**体験できること：** `slices.SortFunc` / `slices.ContainsFunc` / `cmp.Compare`（Go 1.21）、テストに守られたリファクタリング
-
----
-
-## Lv23：時間停止の魔法でテストせよ（Go経験者向け）
-
-**前提：** Lv11（詠唱中断）を修正しておくこと。
-
-**症状：** 詠唱中断のテストは実時間で2〜10秒かかる。時間に依存するコードのテストは遅くて不安定になりがち。
-
-**修正箇所：** `pkg/server/service/spell_test.go`（と `spell.go`）
-
-**やること：** Go 1.25 で標準入りした `testing/synctest` を使う。バブル内では `time.Sleep` や `time.After` が**仮想時間**で進むため、一瞬でテストが終わる。
-
-### Step 1：Skip を外して実行する
-
-```bash
-go test ./pkg/server/service/ -run TestInterruptCast -v
-```
-
-**deadlock で panic するはず。** これはバグではなく、synctest が「詠唱 goroutine が永遠にブロックしたまま残る」という **goroutineリークを暴いた**結果。詠唱完了を channel に送ろうとしても、タイムアウト後は誰も受信しないからだ。
-
-### Step 2：castSpell の channel をバッファ付きにする
-
-```go
-func castSpell() <-chan string {
-    done := make(chan string, 1) // ← バッファ付きにすると送信側がブロックしない
-    ...
-}
-```
-
-### Step 3：再実行
-
-テストが**一瞬で**通れば成功（実時間で2秒待たない）。
-
-**体験できること：** `testing/synctest`（Go 1.25）、仮想時間によるテスト、synctest が goroutineリークを検出してくれること、バッファ付き channel
-
----
-
-## Lv24：酒場の席数を最適化せよ（Go経験者向け）
-
-**症状：** DBコネクションプールが未設定（デフォルト＝接続数無制限）。負荷をかけると接続が増え放題で、DBが悲鳴を上げる。
-
-**修正箇所：** `pkg/db/conn.go` の `Connect`
-
-**やること：** プールの設定を追加する。
-
-```go
-conn.SetMaxOpenConns(25)                 // 同時に開ける接続の上限
-conn.SetMaxIdleConns(5)                  // 待機させておく接続数
-conn.SetConnMaxLifetime(5 * time.Minute) // 接続の寿命
-```
-
-**動作確認：** 負荷をかけながら統計を観測する。
-
-```bash
-# 別ターミナルで負荷をかける
-for i in $(seq 1 50); do curl -s http://localhost:8080/api/hero > /dev/null & done
-
-# プールの状態を見る（max_open / open_connections / wait_count）
-curl http://localhost:8080/api/debug/db
-```
-
-**体験できること：** `database/sql` のコネクションプール、`db.Stats()` による観測、リソース上限設計
-
----
-
-## Lv25：伝説の単一バイナリ（Go経験者向け）
-
-**症状：** `go build` したバイナリを別の場所にコピーして実行すると、APIは動くのにゲーム画面が表示されない。`_frontend` をディスクから読んでいるためだ。
-
-**修正箇所：** `pkg/server/server.go` ＋ 新規ファイル
-
-**やること：** `go:embed` でフロントエンドをバイナリに埋め込む。
-
-### Step 1：リポジトリ直下に `frontend_embed.go` を作る
-
-```go
-package gopherslayer
-
-import "embed"
-
-// all: を付けると _ や . で始まるファイル/ディレクトリも埋め込める
-//
-//go:embed all:_frontend
-var FrontendFS embed.FS
-```
-
-（`go:embed` は自分のパッケージより上のディレクトリを参照できないため、リポジトリ直下に置く）
-
-### Step 2：`server.go` の配信を差し替える
-
-```go
-import gopherslayer "github.com/maropook/gopher-slayer"
-
-// e.Static(...) 2行を削除して、こう置き換える
-e.StaticFS("/", echo.MustSubFS(gopherslayer.FrontendFS, "_frontend"))
-```
-
-### Step 3：単一バイナリで動かす
-
-```bash
-go build -o /tmp/gopher-slayer-server ./cmd
-cd /tmp && ./gopher-slayer-server   # ソースのない場所でもゲームが遊べる！
-```
-
-**体験できること：** `//go:embed`（`all:` プレフィックス）、`embed.FS`、単一バイナリ配布の威力
 
 ---
 
@@ -866,6 +459,7 @@ cd /tmp && ./gopher-slayer-server   # ソースのない場所でもゲームが
 | テスト | Integration Test, E2E Test, TDD, BDD, カバレッジ80% |
 | DB | Redis, Index追加, Migration, N+1解消, Transaction |
 | アーキテクチャ | クリーンアーキテクチャ, DDD, デザインパターン, DI |
+| Go深掘り | context伝播, Graceful Shutdown, slog, ジェネリクス, slices, testing/synctest, コネクションプール, go:embed |
 | API品質 | バリデーション, 認証(JWT), Rate Limiting, エラーハンドリング統一 |
 | 可観測性 | メトリクス(Prometheus), 分散トレーシング(OpenTelemetry), expvar |
 | 新機能 | ガチャ機能, 武器システム, gRPC, GraphQL |

@@ -39,11 +39,47 @@ func (h *StageHandler) GetStages(c echo.Context) error {
 	return c.JSON(http.StatusOK, stages)
 }
 
+// GetChallenges はチャレンジ（Lv6〜Lv28）の敵一覧を返す。このハンドラーは変更しなくてよい。
+// GET /api/challenges
+func (h *StageHandler) GetChallenges(c echo.Context) error {
+	enemies, err := h.enemyRepo.GetChallenges()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, enemies)
+}
+
 // GetLegend は古文書の言い伝えを返す。
-// ステージ選択画面を開くたびに呼ばれる（Lv19: 毎回800msかかるのが症状）。
+// ステージ選択画面を開くたびに呼ばれる（Lv27: 毎回800msかかるのが症状）。
 // GET /api/legend
 func (h *StageHandler) GetLegend(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"legend": service.DecodeAncientText()})
+}
+
+// SpeedReadLegend は古文書の速読チャレンジ（Lv27の判定用）。
+// 2回続けて解読し、2回目が一瞬で終わるかを判定する。
+// POST /api/legend/speedread
+func (h *StageHandler) SpeedReadLegend(c echo.Context) error {
+	start := time.Now()
+	service.DecodeAncientText()
+	first := time.Since(start)
+
+	start = time.Now()
+	service.DecodeAncientText()
+	second := time.Since(start)
+
+	if second > 200*time.Millisecond {
+		return c.JSON(http.StatusRequestTimeout, map[string]interface{}{
+			"error":     "2回目の解読にも時間がかかっている…毎回ゼロから解読し直しているようだ",
+			"first_ms":  first.Milliseconds(),
+			"second_ms": second.Milliseconds(),
+		})
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message":   "2回目は一瞬で読めた！解読結果がしっかり記憶されている！",
+		"first_ms":  first.Milliseconds(),
+		"second_ms": second.Milliseconds(),
+	})
 }
 
 // GetEnemies は指定ステージの敵一覧を返す。

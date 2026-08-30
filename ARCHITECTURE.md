@@ -77,19 +77,19 @@ sequenceDiagram
 
 ```
 .
-├── cmd/main.go                # エントリポイント（起動・Lv12/Lv14の修正対象）
+├── cmd/main.go                # エントリポイント（起動処理）
 ├── pkg/
 │   ├── constant/constant.go   # 環境変数・設定
 │   ├── db/conn.go             # DB接続（Lv14/Lv24の修正対象）
 │   └── server/
-│       ├── server.go          # Echoの組み立て：ミドルウェア・静的配信・DI（Lv25の修正対象）
+│       ├── server.go          # Echoの組み立て：ミドルウェア・静的配信・DI
 │       ├── handler/           # ルーティング + 各API
 │       ├── service/           # 型定義 + ロジック（バグの多くはここ）
 │       └── repository/        # DB操作
 ├── db/init/                   # テーブル定義(1_ddl.sql)・初期データ(2_dml.sql)
 ├── _frontend/                 # ゲーム画面（参加者は触らない）
 ├── api-document.yaml          # API仕様（OpenAPI）
-├── Tasks.md                   # ワークショップタスク（Lv1〜Lv25）
+├── Tasks.md                   # ワークショップタスク（Lv1〜Lv28）
 ├── ANSWER.md                  # 答え合わせ（講師向け）
 └── CHALLENGES.md              # 発展課題
 ```
@@ -121,23 +121,38 @@ e.Start(":8080")  … サーバー起動
 | PUT | `/hero/hp` | HP更新 | **Lv3**（ルート追加） |
 | GET | `/stages` | ステージ一覧（解放状況付き） | — |
 | GET | `/stages/:id/enemies` | ステージの敵一覧 | — |
-| POST | `/stages/:id/clear` | ステージクリア（EXP付与） | **Lv2**, **Lv10** |
-| POST | `/stages/5/challenge` | 封印解除チャレンジ | **Lv6** |
-| GET | `/legend` | 古文書の言い伝え | **Lv19** |
-| POST | `/battle/attack` | ヒーローの攻撃 | **Lv1**, **Lv4**, **Lv9**, **Lv20** |
-| POST | `/battle/enemy-attack` | 敵の攻撃 | **Lv5**, **Lv7**, **Lv17** |
-| POST | `/battle/horde` | 群れ討伐 | **Lv8** |
-| POST | `/battle/interrupt` | 詠唱中断 | **Lv11**, **Lv23** |
-| POST | `/battle/defuse` | 呪いの爆弾解除 | **Lv18** |
-| POST | `/quests/gather` | ギルド依頼の調査 | **Lv16** |
-| GET | `/debug/memory` | メモリ・goroutine観測（変更不要） | Lv9/Lv17の観測用 |
-| GET | `/debug/db` | DBプール統計観測（変更不要） | Lv24の観測用 |
+| POST | `/stages/:id/clear` | ステージクリア（EXP付与） | **Lv2**, **Lv14** |
+| POST | `/stages/5/challenge` | 封印解除チャレンジ | **Lv16** |
+| GET | `/challenges` | チャレンジの敵一覧（変更不要） | Lv6〜Lv28の共通基盤 |
+| GET | `/legend` | 古文書の言い伝え | **Lv27** |
+| POST | `/legend/speedread` | 古文書の速読（判定用） | **Lv27** |
+| POST | `/battle/attack` | ヒーローの攻撃 | **Lv1**, **Lv4**, **Lv23**, **Lv28** |
+| POST | `/battle/enemy-attack` | 敵の攻撃 | **Lv5**, **Lv10**, **Lv22** |
+| POST | `/battle/horde` | 群れ討伐 | **Lv17** |
+| POST | `/battle/interrupt` | 詠唱中断 | **Lv18** |
+| POST | `/battle/defuse` | 呪いの爆弾解除 | **Lv25** |
+| POST | `/battle/report` | 討伐報告書の作成（判定用） | **Lv26** |
+| POST | `/battle/prophecy` | 予言者の会心予知（判定用） | **Lv28** |
+| POST | `/battle/scout` | 敵の偵察（判定用） | **Lv6** |
+| POST | `/battle/mirror` | 鏡の鎧への攻撃（判定用） | **Lv7** |
+| POST | `/battle/loot` | 戦利品の回収（判定用） | **Lv8** |
+| POST | `/battle/titan` | 巨神への合計ダメージ検分（判定用） | **Lv9** |
+| POST | `/battle/engrave` | 討伐碑への刻銘（判定用） | **Lv11** |
+| POST | `/battle/mirage` | 分身の見破り（判定用） | **Lv12** |
+| POST | `/battle/formation` | 隊列の安定性検分（判定用） | **Lv13** |
+| POST | `/battle/vault` | 宝物庫のDB接続検分（判定用） | **Lv15** |
+| POST | `/battle/courier` | 伝令の送信（判定用） | **Lv20** |
+| GET | `/mock/guild` | 眠っている遠方のギルド（変更不要） | Lv20の相手役 |
+| POST | `/battle/assault` | 城門突撃の同時数検分（判定用） | **Lv21** |
+| POST | `/battle/familiars` | 使い魔の帰宅検分（判定用） | **Lv24** |
+| POST | `/quests/gather` | ギルド依頼の調査 | **Lv19** |
+| GET | `/debug/memory` | メモリ・goroutine観測（変更不要） | Lv22/Lv23の観測用 |
 
 詳細なリクエスト/レスポンス形式は [api-document.yaml](api-document.yaml) を参照。
 
 ## DB 構成
 
-MySQL 8.0。テーブルは3つだけ。定義は `db/init/1_ddl.sql`、初期データは `db/init/2_dml.sql`。
+MySQL 8.0。テーブルは4つ。定義は `db/init/1_ddl.sql`、初期データは `db/init/2_dml.sql`。
 
 ```mermaid
 erDiagram
@@ -166,11 +181,22 @@ erDiagram
         int attack
         int experience_reward
     }
+    challenge_enemies {
+        int id PK
+        varchar action "チャレンジ種別キー"
+        varchar name
+        int hp
+        int max_hp
+        int attack
+        int unlock_exp "解放に必要なEXP"
+    }
     stages ||--o{ enemies : "1ステージに複数の敵"
 ```
 
+- `challenge_enemies` は Lv6〜Lv28 のチャレンジで対決する敵。`unlock_exp` に達するとカードが解放され、倒すとフロントが `PUT /api/hero/experience` で EXP を +100 して次の敵が解放される
+
 - ヒーローは常に `id = 1` の1件だけ（ログイン機能はない）
-- ステージの解放判定は「ヒーローのEXP ≧ `required_experience`」をhandler側で計算している
+- ステージの解放判定は「ヒーローのEXP ≧ `required_experience`」をhandler側で計算している。チャレンジの解放判定は「EXP ≧ `unlock_exp`」をフロント側で計算している
 
 ## 状態の持ち方
 
@@ -178,18 +204,18 @@ erDiagram
 |------|---------|------|
 | ヒーローのステータス（EXP・最大HP等） | MySQL | リロードしても消えない |
 | バトル中のHP（ヒーロー・敵） | フロント（game.js のグローバル変数） | サーバーは計算結果を返すだけ |
-| サーバープロセス内の状態 | serviceのグローバル変数 | Lv8のカウンタ、Lv9の怨念、Lv19の解読結果など。**再起動で消える** |
+| サーバープロセス内の状態 | serviceのグローバル変数 | Lv17のカウンタ、Lv23の怨念、Lv27の解読結果など。**再起動で消える** |
 
 ## ワークショップ教材としての仕掛け
 
 - バグが仕込まれている箇所には必ず `[LvN バグ仕込み箇所]` というコメントがある（`grep -rn "バグ仕込み箇所" pkg cmd` で一覧できる）
 - `GET /api/debug/memory` と `GET /api/debug/db` は観測用の正しいコード。参加者は変更しない
-- `make dev` は [air](https://github.com/air-verse/air) によるホットリロード起動。ファイルを保存すると自動で再起動する（Lv18でサーバーが落ちても勝手に復活する）
-- Go 1.25 が必要（Lv23 の `testing/synctest` のため）
+- `make start` は [air](https://github.com/air-verse/air) によるホットリロード起動。ファイルを保存すると自動で再起動する（Lv25でサーバーが落ちても勝手に復活する）
+- Go 1.22 が必要（Lv28 の `math/rand/v2` のため）
 
 ## 関連ドキュメント
 
 - [README.md](README.md) — 起動方法
-- [Tasks.md](Tasks.md) — ワークショップタスク（Lv1〜Lv25）
+- [Tasks.md](Tasks.md) — ワークショップタスク（Lv1〜Lv28）
 - [ANSWER.md](ANSWER.md) — 答え合わせ（講師向け）
 - [CHALLENGES.md](CHALLENGES.md) — 発展課題

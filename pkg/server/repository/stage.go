@@ -38,7 +38,7 @@ func (r *StageRepository) GetAll() ([]*service.Stage, error) {
 
 // GetByID は指定IDのステージを取得する。
 //
-// [Lv10 バグ仕込み箇所]
+// [Lv14 バグ仕込み箇所]
 // エラーを握りつぶして nil を返しているため、存在しないステージIDを渡すと
 // 呼び出し側が nil ポインタを参照して panic する。
 // エラーをそのまま返すのが正解（sql.ErrNoRows が「見つからない」を表す）。

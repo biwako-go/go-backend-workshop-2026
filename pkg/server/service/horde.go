@@ -17,7 +17,7 @@ var killCount int
 
 // SlayHorde はゴブリンの群れを goroutine で同時に討伐する。
 //
-// [Lv8 バグ仕込み箇所]
+// [Lv17 バグ仕込み箇所]
 // 複数の goroutine が mutex なしで同じ変数 killCount に書き込んでいるため、
 // 討伐数がズレてしまう（データ競合）。go test -race ./... で検出できる。
 // sync.Mutex（または sync/atomic）でカウンタを守るのが正解。

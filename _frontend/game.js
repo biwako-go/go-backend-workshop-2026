@@ -38,148 +38,192 @@ const STAGE_ICONS = {
   5: '/images/icons/stage-alert.png',
 };
 
-// ---- Go 経験者向けチャレンジ（ステージ5クリア後に表示）----
-// type: 'stage' → ステージセクションに表示、'task' → タスクセクションに表示
+// ---- Go 経験者向けチャレンジ（ステージ5クリア後に解放、Lv順に表示）----
+// action あり → クリックでチャレンジ実行、action なし → クリックでヒント表示
 const ADVANCED_CHALLENGES = [
   {
     lv: 'Lv6',
-    title: '封印を並列に解いてボスと戦う',
-    hint: '症状: このカードをクリックすると封印解除を試みます。\n5秒後に失敗したら、pkg/server/service/seal.go の BreakAllSeals を goroutine + sync.WaitGroup で並列化しよう。',
-    action: 'challenge',
-    type: 'stage',
-  },
-  {
-    lv: 'Lv8',
-    title: 'ゴブリンの群れを一掃せよ',
-    hint: '症状: 100体の群れを同時討伐すると、討伐数の記録がズレる。\npkg/server/service/horde.go の SlayHorde にデータ競合（Race Condition）がある。\ngo test -race ./... で検出し、sync.Mutex でカウンタを守ろう。',
-    action: 'horde',
-    type: 'stage',
-  },
-  {
-    lv: 'Lv9',
-    title: '倒した敵の怨念を祓え',
-    hint: '症状: 戦うほどサーバーのメモリが増え続け、怨念が祓えない。\npkg/server/service/battle.go でグローバル変数に参照が残り、GCがメモリを回収できない（メモリリーク）。\nGET /api/debug/memory や GODEBUG=gctrace=1 で観測して直そう。',
-    action: 'grudge',
-    type: 'stage',
-  },
-  {
-    lv: 'Lv10',
-    title: '幻のステージの番人',
-    hint: '症状: 存在しないステージに挑むとサーバーで panic が起きる。\npkg/server/repository/stage.go の GetByID がエラーを握りつぶして nil を返している。\nエラーを正しく返して nil ポインタ参照を防ごう。',
-    action: 'phantom',
-    type: 'stage',
-  },
-  {
-    lv: 'Lv11',
-    title: 'ボスの詠唱を中断せよ',
-    hint: '症状: 詠唱中断を試みると10秒間固まって間に合わない。\npkg/server/service/spell.go の InterruptCast が詠唱channelをただ待っている。\nselect + time.After で2秒タイムアウトさせよう。',
-    action: 'interrupt',
-    type: 'stage',
-  },
-  {
-    lv: 'Lv16',
-    title: 'ギルドの依頼を同時にこなせ',
-    hint: '症状: 3つの依頼調査が1件ずつ直列に走り、ギルドの受付時間（2秒）に間に合わない。\npkg/server/service/quest.go の GatherQuestReports を golang.org/x/sync/errgroup で並列化しよう。\n\n事前に: go get golang.org/x/sync/errgroup',
-    action: 'quest',
-    type: 'stage',
-  },
-  {
-    lv: 'Lv17',
-    title: '悪霊の門を閉じろ',
-    hint: '症状: 敵の攻撃のたびに悪霊（goroutine）が増え続ける。\npkg/server/service/battle.go の summonSpirit が閉じない channel を永遠に待つ goroutine を起動している（goroutineリーク）。\nGET /api/debug/memory の num_goroutine で観測して直そう。',
-    action: 'spirit',
-    type: 'stage',
-  },
-  {
-    lv: 'Lv18',
-    title: '呪いの爆弾を解除せよ',
-    hint: '症状: 解除を試みると1秒後にサーバーごと落ちる。\ngoroutine の中の panic は Echo の Recover では拾えない。\npkg/server/service/curse.go の goroutine の先頭に defer + recover() を仕込もう。',
-    action: 'curse',
-    type: 'stage',
+    title: '姿の見えない敵',
+    hint: '症状: 偵察してもステルスGopherの名前もHPも見えない（JSONが空っぽ）。\npkg/server/service/stealth.go の ScoutedEnemy のフィールドが小文字＝非公開のため、encoding/json から見えない。\nフィールドを大文字にして jsonタグ（`json:\"name\"` など）を付けよう。',
+    action: 'scout',
+    condition: '偵察結果に敵の <strong>名前とステータス</strong> が写っていること',
+    img: '/images/gopher-enemies/gopher-ghost.png',
   },
   {
     lv: 'Lv7',
-    title: 'テストを書いてバグを見つける',
-    hint: '症状: ボスドラゴンの攻撃を受けてもHPが1残って死なない。\n\npkg/server/service/battle_test.go にテストケースを追加して ApplyDamage のバグを発見しよう。\n\nコマンド:\ngo test ./pkg/server/service/ -run TestApplyDamage -v',
-    action: null,
-    type: 'task',
+    title: '鏡の鎧を打ち破れ',
+    hint: '症状: 何度攻撃しても鏡の鎧のGopherのHPが90のまま減らない。\npkg/server/service/mirror.go の TakeDamage が「値レシーバ」なので、コピーのHPを減らしているだけ。\nポインタレシーバ func (k *MirrorKnight) TakeDamage(...) に変えよう。',
+    action: 'mirror',
+    condition: '3回の攻撃で騎士のHPを <strong>90 → 0</strong> にすること',
+    img: '/images/gopher-enemies/gopher-ice.png',
+  },
+  {
+    lv: 'Lv8',
+    title: '戦利品を袋に詰めろ',
+    hint: '症状: 戦利品を拾おうとするとサーバーがエラーを起こす（panic）。\npkg/server/service/loot.go — var で宣言しただけの map は nil で、書き込むと panic する。\nmake(map[string]int) で袋を用意してから詰めよう。',
+    action: 'loot',
+    condition: '戦利品を袋に詰めても <strong>panicしない</strong> こと',
+    img: '/images/gopher-enemies/gopher-zombie.png',
+  },
+  {
+    lv: 'Lv9',
+    title: '巨神Gopherを検分せよ',
+    hint: '症状: 25ダメージ×30回のはずが、合計ダメージがマイナスになる。\npkg/server/service/titan.go — 合計を int8（-128〜127）で数えていてオーバーフローしている。\nint に変えよう。Goの整数型には入る値の範囲がある。',
+    action: 'overflow',
+    condition: '合計ダメージが正しく <strong>750</strong> になること',
+    img: '/images/gopher-enemies/gopher-magma.png',
+  },
+  {
+    lv: 'Lv10',
+    title: '不死身の呪いを解け',
+    hint: '症状: 致死ダメージを受けてもHPが1残って死なない（不死身の呪い）。\npkg/server/service/battle.go の ApplyDamage にバグがある。\nおすすめ: battle_test.go にテストケースを追加して見つけよう。\n\nコマンド:\ngo test ./pkg/server/service/ -run TestApplyDamage -v',
+    action: 'finish',
+    condition: '致死ダメージを受けたらHPは <strong>0</strong> になること',
+    img: '/images/gopher-enemies/gopher-zombie.png',
+  },
+  {
+    lv: 'Lv11',
+    title: '討伐碑に名を刻め',
+    hint: '症状: 討伐碑に刻んだ敵の名前が文字化けしている。\npkg/server/service/naming.go の EngraveName — len() と s[:5] は「バイト数」で切るため、日本語（1文字3バイト）が途中でちぎれる。\n[]rune に変換して「文字数」で切り詰めよう。',
+    action: 'engrave',
+    condition: '刻んだ名前が <strong>壊れていない</strong> こと（5文字で切り詰め）',
+    img: '/images/gopher-enemies/gopher-psycho.png',
   },
   {
     lv: 'Lv12',
-    title: '戦場からの安全な撤退',
-    hint: '症状: Ctrl+C でサーバーを止めると、処理中のリクエストが強制切断され冒険者が戦場に取り残される。\n\ncmd/main.go に signal.Notify と e.Shutdown(ctx) を実装して Graceful Shutdown（安全な撤退）を実現しよう。\n\n確認: 時間のかかるAPIを処理中に Ctrl+C しても、レスポンスが返ってから終了すればOK。',
-    action: null,
-    type: 'task',
+    title: '分身Gopherを見破れ',
+    hint: '症状: 分身だけを弱体化したはずが、本体まで一緒に弱くなっている。\npkg/server/service/mirage.go — スライスの代入はコピーではなく「同じ配列を指す窓」。\nslices.Clone（または make + copy）で複製しよう。',
+    action: 'mirage',
+    condition: '分身を弱体化しても <strong>本体は無傷</strong> であること',
+    img: '/images/gopher-enemies/gopher-ice.png',
   },
   {
     lv: 'Lv13',
-    title: '戦闘レポートを高速化せよ',
-    hint: '症状: 戦闘レポートの生成が遅い。\n\npkg/server/service/battle.go の BuildBattleReport が文字列の += 連結を使っている。\nまずベンチマークで現状を計測し、strings.Builder に書き換えて B/op を減らそう。\n\nコマンド:\ngo test ./pkg/server/service/ -bench BuildBattleReport -benchmem',
-    action: null,
-    type: 'task',
+    title: '討伐隊を整列させろ',
+    hint: '症状: 討伐隊の隊列が組むたびにバラバラになる。\npkg/server/service/formation.go — Goの map を range で回す順序は毎回ランダムと決まっている。\n取り出した名前を slices.Sort で並べ替えて隊列を安定させよう。',
+    action: 'formation',
+    condition: '隊列を5回組んで <strong>毎回同じ順序</strong> になること',
+    img: '/images/gopher-enemies/gopher-psycho.png',
   },
   {
     lv: 'Lv14',
-    title: '冒険の記録を整えよ',
-    hint: '症状: サーバーログが log.Printf のテキスト形式で、集計・検索ができない。\n\ncmd/main.go と pkg/db/conn.go の log.Printf / log.Println / log.Fatal を、Go 1.21 標準の log/slog による構造化ログに置き換えよう。',
-    action: null,
-    type: 'task',
+    title: '幻の番人',
+    hint: '症状: 存在しないステージに挑むとサーバーで panic が起きる。\npkg/server/repository/stage.go の GetByID がエラーを握りつぶして nil を返している。\nエラーを正しく返して nil ポインタ参照を防ごう。',
+    action: 'phantom',
+    condition: '存在しないステージに挑んでも、サーバーは <strong>正しくエラーを返す</strong> こと',
+    img: '/images/gopher-enemies/gopher-ice.png',
   },
   {
     lv: 'Lv15',
-    title: '時空の歪みを断ち切れ',
-    hint: '症状: プレイヤーが画面を閉じても、サーバーはDBクエリを実行し続けている。\n\nhandler → service → repository の全層に context.Context を第1引数で伝播させ、QueryRow を QueryRowContext に、Exec を ExecContext に置き換えよう（最難関）。\n\nhandler では c.Request().Context() から ctx を取り出せる。',
-    action: null,
-    type: 'task',
+    title: '宝物庫の扉を閉めろ',
+    hint: '症状: 宝物庫を覗くたびにDB接続が開きっぱなしになり、どんどん溜まっていく。\npkg/server/repository/enemy.go の PeekVault — rows.Close() が抜けている。\nQuery の直後に defer rows.Close() を入れるのが Go の作法。',
+    action: 'vault',
+    condition: '宝物庫を15回覗いても扉（DB接続）が <strong>閉まっている</strong> こと',
+    img: '/images/gopher-enemies/gopher-demon.png',
+  },
+  {
+    lv: 'Lv16',
+    title: '封印を並列に解け',
+    hint: '症状: 封印解除に5秒かかって失敗する（制限時間3秒）。\npkg/server/service/seal.go の BreakAllSeals が封印を1つずつ順番に解いている。\ngoroutine + sync.WaitGroup で並列化すれば約1秒で終わる。',
+    action: 'challenge',
+    condition: '5つの封印を <strong>3秒以内</strong> にすべて解け',
+    img: '/images/gopher-enemies/gopher-magma.png',
+  },
+  {
+    lv: 'Lv17',
+    title: 'ゴブリンの群れを一掃せよ',
+    hint: '症状: 100体の群れを同時討伐すると、討伐数の記録がズレる。\npkg/server/service/horde.go の SlayHorde にデータ競合（Race Condition）がある。\ngo test -race ./... で検出し、sync.Mutex でカウンタを守ろう。',
+    action: 'horde',
+    condition: '100体の群れを同時討伐し、討伐数を <strong>正確に記録</strong> せよ',
+    img: '/images/gopher-enemies/gopher-psycho.png',
+  },
+  {
+    lv: 'Lv18',
+    title: 'ボスの詠唱を中断せよ',
+    hint: '症状: 詠唱中断を試みると10秒間固まって間に合わない。\npkg/server/service/spell.go の InterruptCast が詠唱channelをただ待っている。\nselect + time.After で2秒タイムアウトさせよう。',
+    action: 'interrupt',
+    condition: 'ボスの詠唱（10秒）が完了する前に <strong>2秒以内</strong> で中断せよ',
+    img: '/images/gopher-enemies/gopher-magma.png',
   },
   {
     lv: 'Lv19',
-    title: '古文書の解読は一度だけ',
-    hint: '症状: ステージ選択画面を開くたびに「言い伝え」の表示が遅い（毎回800ms）。\n\npkg/server/service/ancient.go の DecodeAncientText が呼ばれるたびに解読し直している。\nsync.Once で最初の1回だけ解読するようにしよう。\n\n確認: time curl http://localhost:8080/api/legend を2回叩き、2回目が一瞬で返ればOK。',
-    action: null,
-    type: 'task',
+    title: 'ギルドの依頼を同時にこなせ',
+    hint: '症状: 3つの依頼調査が1件ずつ直列に走り、ギルドの受付時間（2秒）に間に合わない。\npkg/server/service/quest.go の GatherQuestReports を golang.org/x/sync/errgroup で並列化しよう。\n\n事前に: go get golang.org/x/sync/errgroup',
+    action: 'quest',
+    condition: '3つの依頼を <strong>2秒以内</strong> にすべて調査せよ',
+    img: '/images/gopher-enemies/gopher-zombie.png',
   },
   {
     lv: 'Lv20',
-    title: 'クリティカルの乱数を現代化せよ',
-    hint: '症状: サーバーを再起動するたび、クリティカル（会心の一撃）が全く同じ順番で出る（予測可能＝チート可能）。\n\npkg/server/service/battle.go の RollCritical が古い math/rand を固定シードで使っている。\nGo 1.22 の math/rand/v2 に移行しよう（自動シードなので Seed 不要、rand.IntN(4) == 0 と書ける）。',
-    action: null,
-    type: 'task',
+    title: '眠るギルドに見切りをつけろ',
+    hint: '症状: 眠っている遠方のギルドへ伝令を送ると、永遠に返事を待ち続けてしまう。\npkg/server/service/courier.go の http.Client に Timeout が設定されていない。\nTimeout: 2 * time.Second を設定して、2秒で諦めて帰らせよう。',
+    action: 'courier',
+    condition: '眠っている相手に <strong>2秒</strong> で見切りをつけて帰還すること',
+    img: '/images/gopher-enemies/gopher-zombie.png',
   },
   {
     lv: 'Lv21',
-    title: '二つの関数を一つに束ねよ',
-    hint: '症状: pkg/server/service/mathutil.go に、型が違うだけのほぼ同じ関数（MaxInt / MaxFloat64）が2つある。\n\nジェネリクス（型パラメータ）と cmp.Ordered で Max[T cmp.Ordered](a, b T) T の1つにまとめ、mathutil_test.go も書き換えよう。\n\nコマンド:\ngo test ./pkg/server/service/ -run TestMax -v',
-    action: null,
-    type: 'task',
+    title: '城門の大渋滞を制圧せよ',
+    hint: '症状: 100人の騎士が一斉に突撃して城門で団子になっている（同時100人）。\npkg/server/service/assault.go — バッファ付き channel（容量5）をセマフォとして使い、\n「入る前に枠を取り、出るときに枠を返す」形で同時実行数を5に制限しよう。',
+    action: 'assault',
+    condition: '同時に突撃する騎士を <strong>5人以下</strong> に抑えること',
+    img: '/images/gopher-enemies/gopher-demon.png',
   },
   {
     lv: 'Lv22',
-    title: '手書きループを標準の剣で斬れ',
-    hint: '症状: pkg/server/service/ranking.go に手書きのバブルソートと検索ループがある。\n\nGo 1.21 標準の slices.SortFunc（+ cmp.Compare）と slices.ContainsFunc に置き換えよう。\n既存のテストがそのまま通れば成功。\n\nコマンド:\ngo test ./pkg/server/service/ -run "TestSortEnemiesByAttack|TestHasBoss" -v',
-    action: null,
-    type: 'task',
+    title: '悪霊の門を閉じろ',
+    hint: '症状: 敵の攻撃のたびに悪霊（goroutine）が増え続ける。\npkg/server/service/battle.go の summonSpirit が閉じない channel を永遠に待つ goroutine を起動している（goroutineリーク）。\nGET /api/debug/memory の num_goroutine で観測して直そう。',
+    action: 'spirit',
+    condition: '30連戦しても悪霊（goroutine）が <strong>漏れ出さない</strong> こと',
+    img: '/images/gopher-enemies/gopher-ghost.png',
   },
   {
     lv: 'Lv23',
-    title: '時間停止の魔法でテストせよ',
-    hint: '症状: 詠唱中断（Lv11）のテストは実時間で2〜10秒かかる。\n\nGo 1.25 の testing/synctest を使うと仮想時間で一瞬で終わる。\npkg/server/service/spell_test.go の Skip を外して実行すると deadlock になり、synctest が「詠唱goroutineのリーク」を暴いてくれる。castSpell の channel をバッファ付きにして直そう。\n\n※ Lv11 を先に修正しておくこと。',
-    action: null,
-    type: 'task',
+    title: '倒した敵の怨念を祓え',
+    hint: '症状: 戦うほどサーバーのメモリが増え続け、怨念が祓えない。\npkg/server/service/battle.go でグローバル変数に参照が残り、GCがメモリを回収できない（メモリリーク）。\nGET /api/debug/memory や GODEBUG=gctrace=1 で観測して直そう。',
+    action: 'grudge',
+    condition: '20連戦のあと、サーバーのメモリが <strong>50MB未満</strong> なら怨念は祓われる',
+    img: '/images/gopher-enemies/gopher-ghost.png',
   },
   {
     lv: 'Lv24',
-    title: '酒場の席数を最適化せよ',
-    hint: '症状: DBコネクションプールが未設定（接続数無制限）で、負荷をかけると接続が増え放題になる。\n\npkg/db/conn.go に SetMaxOpenConns / SetMaxIdleConns / SetConnMaxLifetime を設定しよう。\n\n観測: GET /api/debug/db で open_connections や wait_count の変化を見る。',
-    action: null,
-    type: 'task',
+    title: '使い魔を家に帰せ',
+    hint: '症状: 使い魔を召喚するたびに、永遠に働き続ける使い魔（goroutine）が増えていく。\npkg/server/service/familiar.go — 使い魔に「帰っていいよ」と伝える手段がない。\ncontext.WithCancel で ctx を渡し、使い魔は select で ctx.Done() を確認して帰れるようにしよう。',
+    action: 'familiar',
+    condition: '使い魔10体が仕事を終えたら <strong>全員帰宅</strong> すること',
+    img: '/images/gopher-enemies/gopher-ghost.png',
   },
   {
     lv: 'Lv25',
-    title: '伝説の単一バイナリ',
-    hint: '症状: go build したバイナリを別の場所で実行すると、ゲーム画面が表示されない（_frontend をディスクから読んでいるため）。\n\ngo:embed で _frontend をバイナリに埋め込もう。\n1. リポジトリ直下に frontend_embed.go を作り //go:embed all:_frontend で埋め込む\n2. pkg/server/server.go の e.Static を e.StaticFS + echo.MustSubFS に置き換える\n\n確認: go build -o /tmp/server ./cmd して別ディレクトリから起動してもゲームが遊べればOK。',
-    action: null,
-    type: 'task',
+    title: '呪いの爆弾を解除せよ',
+    hint: '症状: 解除を試みると1秒後にサーバーごと落ちる。\ngoroutine の中の panic は Echo の Recover では拾えない。\npkg/server/service/curse.go の goroutine の先頭に defer + recover() を仕込もう。',
+    action: 'curse',
+    condition: '爆弾を解除しても、サーバーが <strong>生きている</strong> こと',
+    img: '/images/gopher-enemies/gopher-demon.png',
+  },
+  {
+    lv: 'Lv26',
+    title: '討伐報告書を高速化せよ',
+    hint: '症状: 40000行の討伐報告書の作成が遅すぎて軍記官が音を上げる。\npkg/server/service/battle.go の BuildBattleReport が += の文字列連結を使っている。\nstrings.Builder に書き換えよう。ベンチマークでの計測もおすすめ:\n\ngo test ./pkg/server/service/ -bench BuildBattleReport -benchmem',
+    action: 'report',
+    condition: '40000行の討伐記録を <strong>1秒以内</strong> に報告書へまとめよ',
+    img: '/images/gopher-enemies/gopher-psycho.png',
+  },
+  {
+    lv: 'Lv27',
+    title: '古文書を速読せよ',
+    hint: '症状: 古文書の解読が毎回800msかかる（ステージ選択画面の「言い伝え」の表示も毎回遅い）。\npkg/server/service/ancient.go の DecodeAncientText が呼ばれるたびに解読し直している。\nsync.Once で「最初の1回だけ」解読するようにしよう。',
+    action: 'decode',
+    condition: '2回目の解読は <strong>一瞬</strong> で終わること（解読結果は変わらないのだから）',
+    img: '/images/gopher-enemies/gopher-ghost.png',
+  },
+  {
+    lv: 'Lv28',
+    title: '予言者に打ち勝て',
+    hint: '症状: 予言者に会心の一撃の行方をすべて予知されてしまう（乱数が予測可能＝チート可能）。\npkg/server/service/battle.go の RollCritical が古い math/rand を固定シードで使っている。\nGo 1.22 の math/rand/v2 に移行しよう（rand.IntN(4) == 0 と書ける。criticalRolls++ の行は判定用なので残す）。',
+    action: 'prophecy',
+    condition: '予言者に会心の行方を <strong>読まれない</strong> こと（12回の会心予知と勝負）',
+    img: '/images/gopher-enemies/gopher-ice.png',
   },
 ];
 
@@ -241,10 +285,18 @@ function addServerLog(method, path, responseData) {
 
 async function apiFetch(path, options = {}) {
   const method = (options.method || 'GET').toUpperCase();
-  const res = await fetch(API + path, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
+  let res;
+  try {
+    res = await fetch(API + path, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+  } catch (e) {
+    // サーバーが落ちている・タイムアウトで中断した等、レスポンス自体がない場合もログに残す
+    const reason = e.name === 'AbortError' ? 'タイムアウトで中断' : 'サーバーから応答なし';
+    addServerLog(method, path, { error: reason });
+    throw e;
+  }
   if (res.status === 404) {
     addServerLog(method, path, { error: '404 Not Found' });
     throw new Error('404');
@@ -315,13 +367,22 @@ async function goToStageSelect() {
   await loadHeroAndStages();
 }
 
+// DBからチャレンジの敵情報（名前・HP・解放EXP）を取得して各カードに紐付ける
+async function loadChallengeEnemies() {
+  const list = await apiFetch('/challenges');
+  const byAction = {};
+  list.forEach(e => { byAction[e.action] = e; });
+  ADVANCED_CHALLENGES.forEach(item => { item.db = byAction[item.action]; });
+}
+
 async function loadHeroAndStages() {
-  loadLegend(); // 古文書の言い伝えを読み込む（Lv19: 毎回800msかかるのが症状）
+  loadLegend(); // 古文書の言い伝えを読み込む（Lv27: 毎回800msかかるのが症状）
   try {
     hero = await apiFetch('/hero');
     updateCharCard(hero);
     heroHP = hero.hp;
 
+    await loadChallengeEnemies();
     const stages = await apiFetch('/stages');
     renderStageList(stages);
   } catch (e) {
@@ -331,7 +392,7 @@ async function loadHeroAndStages() {
   }
 }
 
-// 古文書の言い伝えを取得して表示する（Lv19用）
+// 古文書の言い伝えを取得して表示する（Lv27用）
 async function loadLegend() {
   const el = document.getElementById('legend-line');
   if (!el) return;
@@ -355,8 +416,6 @@ function renderStageList(stages) {
   const container = document.getElementById('stage-list');
   container.innerHTML = '';
 
-  const cleared = hero && hero.experience >= 500;
-
   // ---- ステージ section ----
   container.appendChild(makeSectionHeader('ステージ', 'stage-section-header'));
 
@@ -376,8 +435,20 @@ function renderStageList(stages) {
         <div class="stage-name">${taskTitle}</div>
         <div class="stage-req">必要EXP: ${stage.required_experience}</div>
       </div>
+      <button class="stage-hint-btn" type="button">ヒント</button>
       <div class="stage-arrow">${stage.is_unlocked ? '▶' : '🔒'}</div>
     `;
+
+    // ヒントはロック中でも見られる（Lv2のように「前のステージで直す」課題があるため）
+    const hintBtn = card.querySelector('.stage-hint-btn');
+    if (hint) {
+      hintBtn.onclick = (e) => {
+        e.stopPropagation();
+        openHintModal(hint.lv, hint.title, hint.hint);
+      };
+    } else {
+      hintBtn.style.display = 'none';
+    }
 
     if (stage.is_unlocked) {
       card.onclick = () => startBattle(stage);
@@ -385,42 +456,33 @@ function renderStageList(stages) {
     container.appendChild(card);
   });
 
-  // Lv6 は type:'stage' なのでステージセクションに続けて表示
-  ADVANCED_CHALLENGES.filter(c => c.type === 'stage').forEach(item => {
+  // Go経験者向けチャレンジ。Lv1〜5と同じく、敵を倒す（EXP +100）と次のカードが解放される
+  const advanced = [...ADVANCED_CHALLENGES].sort(
+    (a, b) => parseInt(a.lv.slice(2), 10) - parseInt(b.lv.slice(2), 10)
+  );
+  advanced.forEach(item => {
+    if (!item.db) return; // DBから敵情報を取得できていない場合は表示しない
+    const unlocked = hero && hero.experience >= item.db.unlock_exp;
+    const beaten = hero && hero.experience >= item.db.unlock_exp + 100; // 撃破済み
     const card = document.createElement('div');
-    card.className = 'stage-card' + (cleared ? '' : ' locked');
+    card.className = 'stage-card' + (unlocked ? '' : ' locked');
     card.innerHTML = `
-      <img class="stage-icon" src="/images/icons/stage-alert.png" alt="" />
+      <img class="stage-icon" src="${item.img}" alt="" />
       <div class="stage-info">
         <div class="stage-lv">${item.lv}</div>
         <div class="stage-name">${item.title}</div>
-        <div class="stage-req">必要EXP: 500</div>
+        <div class="stage-req">${item.db.name}（HP ${item.db.max_hp}）／必要EXP: ${item.db.unlock_exp}</div>
       </div>
-      <div class="stage-arrow">${cleared ? '▶' : '🔒'}</div>
+      <button class="stage-hint-btn" type="button">ヒント</button>
+      <div class="stage-arrow">${beaten ? '⭐' : (unlocked ? '▶' : '🔒')}</div>
     `;
-    if (cleared) {
+    // ヒントはロック中でも見られる
+    card.querySelector('.stage-hint-btn').onclick = (e) => {
+      e.stopPropagation();
+      showAdvancedHint(item);
+    };
+    if (unlocked) {
       card.onclick = () => runChallenge(item);
-    }
-    container.appendChild(card);
-  });
-
-  // ---- タスク section ----
-  container.appendChild(makeSectionHeader('タスク', 'task-section-header'));
-
-  ADVANCED_CHALLENGES.filter(c => c.type === 'task').forEach(item => {
-    const card = document.createElement('div');
-    card.className = 'task-card' + (cleared ? '' : ' locked');
-    card.innerHTML = `
-      <img class="stage-icon" src="/images/icons/training-book.png" alt="" />
-      <div class="stage-info">
-        <div class="stage-lv">${item.lv}</div>
-        <div class="stage-name">${item.title}</div>
-        <div class="stage-req">必要EXP: 500</div>
-      </div>
-      <div class="stage-arrow">${cleared ? '？' : '🔒'}</div>
-    `;
-    if (cleared) {
-      card.onclick = () => showAdvancedHint(item);
     }
     container.appendChild(card);
   });
@@ -472,7 +534,7 @@ async function heroAttack() {
     enemyHP = Math.max(0, enemyHP - result.damage);
     updateEnemyHP();
     setDialog(result.message);
-    updateServerMem(); // Lv9: 戦うたびにサーバーメモリ表示を更新（増え続けたら怪しい）
+    updateServerMem(); // Lv23: 戦うたびにサーバーメモリ表示を更新（増え続けたら怪しい）
 
     if (enemyHP <= 0) {
       await handleEnemyDefeated();
@@ -488,14 +550,46 @@ async function heroAttack() {
   }
 }
 
+// ---- Hero skill: 渾身の一撃（ダメージ2倍、ただし大技のスキを突かれて反撃も2倍） ----
+async function heroSkill() {
+  const enemy = enemies[enemyIndex];
+  if (isBusy) return;
+  isBusy = true;
+  setActionsEnabled(false);
+
+  try {
+    const result = await apiFetch('/battle/attack', {
+      method: 'POST',
+      body: JSON.stringify({ hero_attack: hero.attack * 2, enemy_name: enemy.name }),
+    });
+
+    enemyHP = Math.max(0, enemyHP - result.damage);
+    updateEnemyHP();
+    setDialog('渾身の一撃！' + result.message);
+    updateServerMem();
+
+    if (enemyHP <= 0) {
+      await handleEnemyDefeated();
+    } else {
+      await sleep(700);
+      await enemyAttack(2); // 反撃は2倍
+    }
+  } catch (e) {
+    setDialog(`エラー: ${e.message}`);
+    setActionsEnabled(true);
+  } finally {
+    isBusy = false;
+  }
+}
+
 // ---- Enemy attacks ----
-async function enemyAttack() {
+async function enemyAttack(multiplier = 1) {
   const enemy = enemies[enemyIndex];
   try {
     const result = await apiFetch('/battle/enemy-attack', {
       method: 'POST',
       body: JSON.stringify({
-        enemy_attack: enemy.attack,
+        enemy_attack: enemy.attack * multiplier,
         enemy_name: enemy.name,
         hero_hp: heroHP,
       }),
@@ -553,11 +647,27 @@ async function clearStage() {
 }
 
 // ---- Hero died ----
+// HPが0になったら GAME OVER を表示し、HPを全回復させてステージ選択に自動で戻る
 async function handleHeroDied() {
   setDialog('やられてしまった…');
   setActionsEnabled(false);
   await sleep(1500);
+
   showResultScreen(false, null);
+
+  // DB上のHPが最大値を下回っている場合は全回復させる
+  // （Lv3修正前は回復APIが未登録なので、失敗しても気にしない）
+  if (hero && hero.hp < hero.max_hp) {
+    try {
+      await apiFetch('/hero/hp', { method: 'PUT', body: JSON.stringify({ hp: hero.max_hp }) });
+    } catch (e) {
+      // Lv3未修正の間は回復できないが、バトル開始時にDBのHPから復帰するので問題ない
+    }
+  }
+
+  // GAME OVER を少し見せてからステージ選択に自動で戻る
+  await sleep(2500);
+  goToStageSelect();
 }
 
 // ============================================================
@@ -579,13 +689,24 @@ function showResultScreen(isWin, clearResult) {
       EXP獲得: <strong>+${clearResult.experience_gained}</strong><br>
       合計EXP: <strong>${clearResult.new_experience}</strong>
     `;
+    // Lv2: 画面上はEXPが増えたのにDBに保存されていない場合は「バグ発見」の演出を出す
+    // （hero はクリア直後に GET /api/hero で取り直したDB上の値）
+    if (hero && hero.experience < clearResult.new_experience) {
+      detail.innerHTML += `
+        <div class="exp-warning">
+          🐛 <strong>バグ発見！</strong> 画面ではEXPが増えたのに、サーバー（DB）には保存されていない。<br>
+          リロードするとEXPは元に戻り、次のステージも解放されない。<br>
+          → これが <strong>Lv2</strong> の課題。pkg/server/handler/stage.go の ClearStage を修正して、もう一度このステージをクリアしよう
+        </div>
+      `;
+    }
   } else {
     icon.textContent = '💀';
-    title.textContent = 'やられた...';
+    title.textContent = 'GAME OVER';
     title.className = 'result-title lose';
     detail.innerHTML = `
       <strong>${currentStage.name}</strong> でやられてしまった。<br>
-      HPを回復してから再挑戦しよう！
+      HPは全回復した。ステージ選択に戻ります…
     `;
   }
 }
@@ -594,21 +715,37 @@ function showResultScreen(isWin, clearResult) {
 // Help Modal
 // ============================================================
 
+// ヒントモーダルを開く（全レベル共通）
+function openHintModal(lv, title, hintText) {
+  document.getElementById('modal-lv').textContent = lv;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-hint').textContent = hintText;
+  document.getElementById('help-modal').style.display = 'flex';
+}
+
 function showHelp() {
   if (!currentStage) return;
   const hint = STAGE_HINTS[currentStage.order_num] || STAGE_HINTS[1];
-  document.getElementById('modal-lv').textContent = hint.lv;
-  document.getElementById('modal-title').textContent = hint.title;
-  document.getElementById('modal-hint').textContent = hint.hint;
-  document.getElementById('help-modal').style.display = 'flex';
+  openHintModal(hint.lv, hint.title, hint.hint);
 }
 
 const SEAL_NAMES = ['炎の封印', '水の封印', '風の封印', '大地の封印', '闇の封印'];
 
 // ---- チャレンジ画面の共通ヘルパー ----
 
-// アクション名 → チャレンジ関数の対応表
+// 実行中のチャレンジ（チャレンジ画面のヒントボタンで使う）
+let currentChallengeItem = null;
+
+// カードクリック: 敵とのエンカウント開始（判定はまだ行わない）
 function runChallenge(item) {
+  currentChallengeItem = item;
+  openChallengeScreen(item);
+}
+
+// 「たたかう」: バグを直せていれば攻撃が通る＝クリア判定
+async function challengeAttack() {
+  const item = currentChallengeItem;
+  if (!item) return;
   const actions = {
     challenge: tryChallenge,
     horde: tryHordeChallenge,
@@ -618,19 +755,57 @@ function runChallenge(item) {
     quest: tryQuestChallenge,
     spirit: trySpiritChallenge,
     curse: tryCurseChallenge,
+    finish: tryFinishChallenge,
+    report: tryReportChallenge,
+    decode: tryDecodeChallenge,
+    prophecy: tryProphecyChallenge,
+    scout: tryScoutChallenge,
+    mirror: tryMirrorChallenge,
+    loot: tryLootChallenge,
+    overflow: tryTitanChallenge,
+    engrave: tryEngraveChallenge,
+    mirage: tryMirageChallenge,
+    formation: tryFormationChallenge,
+    vault: tryVaultChallenge,
+    courier: tryCourierChallenge,
+    assault: tryAssaultChallenge,
+    familiar: tryFamiliarsChallenge,
   };
   const fn = actions[item.action];
-  if (fn) fn(item);
-  else showAdvancedHint(item);
+  if (!fn) return;
+
+  document.getElementById('challenge-attack-btn').disabled = true;
+  document.getElementById('challenge-back-btn').disabled = true;
+  // 再挑戦に備えて敵の状態をリセット
+  const sprite = document.getElementById('challenge-enemy-sprite');
+  sprite.classList.remove('defeated', 'rage');
+  updateChallengeHP(item.db.max_hp, item.db.max_hp);
+  document.getElementById('challenge-dialog').textContent = 'ヒーローのこうげき！';
+
+  await fn(item);
 }
 
-// チャレンジ画面を開いて初期化し、進捗リストのコンテナを返す
-function openChallengeScreen(header, condition, dialogText) {
+// チャレンジ画面を開く: 敵が現れるだけで、判定は「たたかう」を押したときに行う
+function openChallengeScreen(item) {
   showScreen('challenge-screen');
-  document.getElementById('challenge-header').textContent = header;
-  document.getElementById('challenge-condition').innerHTML = condition;
-  document.getElementById('challenge-dialog').textContent = dialogText;
-  document.getElementById('challenge-back-btn').disabled = true;
+  document.getElementById('challenge-header').textContent = item.title;
+  document.getElementById('challenge-condition').innerHTML = item.condition;
+  document.getElementById('challenge-dialog').textContent = `${item.db.name} が あらわれた！`;
+  document.getElementById('challenge-back-btn').disabled = false;
+  document.getElementById('challenge-attack-btn').disabled = false;
+
+  // 対決する敵（DBの challenge_enemies から取得済み）を表示する
+  const sprite = document.getElementById('challenge-enemy-sprite');
+  const nameEl = document.getElementById('challenge-enemy-name');
+  sprite.classList.remove('defeated', 'rage');
+  sprite.src = item.img;
+  nameEl.textContent = item.db.name;
+  updateChallengeHP(item.db.max_hp, item.db.max_hp);
+  document.getElementById('seal-list').innerHTML = '';
+}
+
+// 判定開始時に進捗リストを初期化して返す
+function resetChallengeList() {
   const listEl = document.getElementById('seal-list');
   listEl.innerHTML = '';
   return listEl;
@@ -652,19 +827,66 @@ function setChallengeRow(el, state, statusText) {
   el.querySelector('.seal-status').textContent = statusText;
 }
 
-// チャレンジを終了してダイアログを更新する
+// チャレンジを終了してダイアログを更新する。
+// 進捗リストの結果（done/failed）から勝敗を判定し、敵の撃破/激怒演出を出す
 function finishChallenge(message) {
-  document.getElementById('challenge-dialog').textContent = message;
   document.getElementById('challenge-back-btn').disabled = false;
+  document.getElementById('challenge-attack-btn').disabled = false; // 直したらもう一度たたかえる
+  const sprite = document.getElementById('challenge-enemy-sprite');
+  const nameEl = document.getElementById('challenge-enemy-name');
+  const hasFailed = document.querySelector('#seal-list .seal-item.failed');
+  const hasDone = document.querySelector('#seal-list .seal-item.done');
+  const db = currentChallengeItem && currentChallengeItem.db;
+  let prefix = '';
+  if (hasFailed) {
+    // 敗北: 攻撃は通らず、敵の反撃を受ける
+    sprite.classList.add('rage');
+    if (db) {
+      nameEl.textContent = db.name;
+      prefix = `${db.name} の反撃！こうげきは効いていない…！ `;
+    }
+  } else if (hasDone) {
+    // 勝利: HPを0まで削って撃破
+    if (db) {
+      updateChallengeHP(0, db.max_hp);
+      nameEl.textContent = db.name;
+      prefix = `${db.name} をたおした！ `;
+      // 初回撃破ならEXP+100（次のチャレンジが解放される）
+      if (hero && hero.experience < db.unlock_exp + 100) {
+        prefix += 'EXP +100！ ';
+        awardChallengeExp(currentChallengeItem);
+      }
+    }
+    setTimeout(() => sprite.classList.add('defeated'), 500); // HPが削れてから倒れる
+  }
+  document.getElementById('challenge-dialog').textContent = prefix + message;
+}
+
+// チャレンジ画面の敵HPバーを更新する
+function updateChallengeHP(hp, maxHP) {
+  const pct = Math.max(0, (hp / maxHP) * 100);
+  document.getElementById('challenge-hp-fill').style.width = pct + '%';
+  document.getElementById('challenge-hp-text').textContent = `${hp}/${maxHP}`;
+  document.getElementById('challenge-hp-fill').classList.toggle('low', pct < 30);
+}
+
+// チャレンジの撃破報酬: EXPを「解放EXP + 100」まで引き上げる（再撃破では増えない）
+async function awardChallengeExp(item) {
+  const target = item.db.unlock_exp + 100;
+  try {
+    await apiFetch('/hero/experience', {
+      method: 'PUT',
+      body: JSON.stringify({ experience: target }),
+    });
+    hero = await apiFetch('/hero');
+    updateCharCard(hero);
+  } catch (e) {
+    // 付与に失敗しても演出はそのまま続行する
+  }
 }
 
 async function tryChallenge(item) {
-  // チャレンジ画面に遷移
-  const sealListEl = openChallengeScreen(
-    '封印解除チャレンジ',
-    '5つの封印を <strong>3秒以内</strong> にすべて解け',
-    '封印を解いています...'
-  );
+  const sealListEl = resetChallengeList();
 
   // 封印リストを初期化（全て「解除中...」＋点滅アニメーション）
   SEAL_NAMES.forEach(name => addChallengeRow(sealListEl, name, '解除中...'));
@@ -694,7 +916,7 @@ async function tryChallenge(item) {
       items[i].classList.add('done');
       items[i].querySelector('.seal-status').textContent = '解いた！';
     }
-    document.getElementById('challenge-dialog').textContent = result.message || 'すべての封印を解いた！ボスドラゴンに挑もう！';
+    finishChallenge(result.message || 'すべての封印を解いた！ボスドラゴンに挑もう！');
 
   } catch (e) {
     clearTimeout(abort);
@@ -705,20 +927,13 @@ async function tryChallenge(item) {
       el.classList.add('failed');
       el.querySelector('.seal-status').textContent = '失敗';
     });
-    document.getElementById('challenge-dialog').textContent =
-      '封印解除に失敗！pkg/server/service/seal.go の BreakAllSeals を goroutine + sync.WaitGroup で並列化しよう。';
+    finishChallenge('封印解除に失敗！pkg/server/service/seal.go の BreakAllSeals を goroutine + sync.WaitGroup で並列化しよう。');
   }
-
-  document.getElementById('challenge-back-btn').disabled = false;
 }
 
-// ---- Lv8: ゴブリンの群れ討伐（Race Condition）----
+// ---- Lv17: ゴブリンの群れ討伐（Race Condition）----
 async function tryHordeChallenge(item) {
-  const listEl = openChallengeScreen(
-    'ゴブリンの群れ討伐',
-    '100体の群れを同時討伐し、討伐数を <strong>正確に記録</strong> せよ',
-    '群れに突撃した…！'
-  );
+  const listEl = resetChallengeList();
   const row = addChallengeRow(listEl, '討伐数の記録', '討伐中...');
 
   try {
@@ -738,13 +953,9 @@ async function tryHordeChallenge(item) {
   }
 }
 
-// ---- Lv9: 怨念祓いの儀式（GC・メモリリーク）----
+// ---- Lv23: 怨念祓いの儀式（GC・メモリリーク）----
 async function tryGrudgeChallenge(item) {
-  const listEl = openChallengeScreen(
-    '怨念祓いの儀式',
-    '20連戦のあと、サーバーのメモリが <strong>50MB未満</strong> なら怨念は祓われる',
-    '倒した敵の魂を鎮めている…'
-  );
+  const listEl = resetChallengeList();
   const battleRow = addChallengeRow(listEl, '20連戦', '0/20');
   const memRow = addChallengeRow(listEl, 'サーバーメモリ', '計測待ち...');
 
@@ -775,13 +986,9 @@ async function tryGrudgeChallenge(item) {
   }
 }
 
-// ---- Lv10: 幻のステージの番人（nil ポインタ panic）----
+// ---- Lv14: 幻のステージの番人（nil ポインタ panic）----
 async function tryPhantomChallenge(item) {
-  const listEl = openChallengeScreen(
-    '幻のステージ',
-    '存在しないステージに挑んでも、サーバーは <strong>正しくエラーを返す</strong> こと',
-    '幻のステージの扉を開く…'
-  );
+  const listEl = resetChallengeList();
   const row = addChallengeRow(listEl, '番人の反応', '確認中...');
 
   try {
@@ -802,13 +1009,9 @@ async function tryPhantomChallenge(item) {
   }
 }
 
-// ---- Lv11: 詠唱中断（channel / select）----
+// ---- Lv18: 詠唱中断（channel / select）----
 async function tryInterruptChallenge(item) {
-  const listEl = openChallengeScreen(
-    '詠唱中断',
-    'ボスの詠唱（10秒）が完了する前に <strong>2秒以内</strong> で中断せよ',
-    'ボスが詠唱を始めた…！'
-  );
+  const listEl = resetChallengeList();
   const row = addChallengeRow(listEl, '詠唱の中断', '試行中...');
 
   // 経過秒数カウンター
@@ -844,15 +1047,11 @@ async function tryInterruptChallenge(item) {
   }
 }
 
-// ---- Lv16: ギルドの依頼調査（errgroup 並列化）----
+// ---- Lv19: ギルドの依頼調査（errgroup 並列化）----
 const QUEST_NAMES = ['魔物の生息調査', '薬草の在庫確認', '地図の作成'];
 
 async function tryQuestChallenge(item) {
-  const listEl = openChallengeScreen(
-    'ギルドの依頼調査',
-    '3つの依頼を <strong>2秒以内</strong> にすべて調査せよ',
-    '調査隊が出発した…'
-  );
+  const listEl = resetChallengeList();
   const rows = QUEST_NAMES.map(name => addChallengeRow(listEl, name, '調査中...'));
 
   // フロント側タイムアウト（6秒で中断）
@@ -876,13 +1075,9 @@ async function tryQuestChallenge(item) {
   }
 }
 
-// ---- Lv17: 悪霊の門（goroutineリーク）----
+// ---- Lv22: 悪霊の門（goroutineリーク）----
 async function trySpiritChallenge(item) {
-  const listEl = openChallengeScreen(
-    '悪霊の門',
-    '30連戦しても悪霊（goroutine）が <strong>漏れ出さない</strong> こと',
-    '門の様子を観察している…'
-  );
+  const listEl = resetChallengeList();
   const battleRow = addChallengeRow(listEl, '30連戦', '0/30');
   const spiritRow = addChallengeRow(listEl, '漏れ出した悪霊(goroutine)', '計測待ち...');
 
@@ -915,13 +1110,9 @@ async function trySpiritChallenge(item) {
   }
 }
 
-// ---- Lv18: 呪いの爆弾（goroutine内panic + recover）----
+// ---- Lv25: 呪いの爆弾（goroutine内panic + recover）----
 async function tryCurseChallenge(item) {
-  const listEl = openChallengeScreen(
-    '呪いの爆弾',
-    '爆弾を解除しても、サーバーが <strong>生きている</strong> こと',
-    '爆弾の解除を試みる…'
-  );
+  const listEl = resetChallengeList();
   const row = addChallengeRow(listEl, 'サーバーの生存確認', '解除中...');
 
   try {
@@ -940,16 +1131,339 @@ async function tryCurseChallenge(item) {
   } catch (e) {
     setChallengeRow(row, 'failed', '死亡…');
     finishChallenge(
-      'サーバーごと爆発した！！（make dev の air が自動で再起動してくれる）goroutine の中の panic は Echo の Recover では拾えない。pkg/server/service/curse.go の goroutine の先頭に defer + recover() を仕込もう。'
+      'サーバーごと爆発した！！（make start の air が自動で再起動してくれる）goroutine の中の panic は Echo の Recover では拾えない。pkg/server/service/curse.go の goroutine の先頭に defer + recover() を仕込もう。'
     );
   }
 }
 
+// ---- Lv10: 不死身の呪い（ApplyDamage）----
+async function tryFinishChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '致死ダメージ後のHP', '判定中...');
+
+  try {
+    const result = await apiFetch('/battle/enemy-attack', {
+      method: 'POST',
+      body: JSON.stringify({ enemy_attack: 9999, enemy_name: 'ゴブリン', hero_hp: 10 }),
+    });
+    if (result.new_hero_hp === 0) {
+      setChallengeRow(row, 'done', 'HP 0');
+      finishChallenge('ヒーローは倒れた…とどめが正しく通る！不死身の呪いは解けている！');
+    } else {
+      setChallengeRow(row, 'failed', `HP ${result.new_hero_hp}`);
+      finishChallenge(
+        `HPが ${result.new_hero_hp} 残って死なない…不死身の呪いだ！pkg/server/service/battle.go の ApplyDamage を直そう（battle_test.go にテストを書いて見つけるのがおすすめ）。`
+      );
+    }
+  } catch (e) {
+    setChallengeRow(row, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv26: 討伐報告書（strings.Builder）----
+async function tryReportChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '報告書の作成', '作成中...');
+
+  const dialogEl = document.getElementById('challenge-dialog');
+  let elapsed = 0;
+  const timer = setInterval(() => {
+    elapsed++;
+    dialogEl.textContent = `軍記官が報告書を書いている… ${elapsed}秒`;
+  }, 1000);
+
+  try {
+    const result = await apiFetch('/battle/report', { method: 'POST' });
+    clearInterval(timer);
+    setChallengeRow(row, 'done', `${result.elapsed_ms}ms`);
+    finishChallenge(result.message);
+  } catch (e) {
+    clearInterval(timer);
+    setChallengeRow(row, 'failed', '遅すぎる');
+    finishChallenge(
+      `${e.message} pkg/server/service/battle.go の BuildBattleReport を strings.Builder で書き換えよう。`
+    );
+  }
+}
+
+// ---- Lv27: 古文書の速読（sync.Once）----
+async function tryDecodeChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '2回目の解読', '解読中...');
+
+  try {
+    const result = await apiFetch('/legend/speedread', { method: 'POST' });
+    setChallengeRow(row, 'done', `${result.second_ms}ms`);
+    finishChallenge(result.message);
+  } catch (e) {
+    setChallengeRow(row, 'failed', '毎回800ms');
+    finishChallenge(
+      `${e.message} pkg/server/service/ancient.go の DecodeAncientText を sync.Once で「最初の1回だけ」にしよう。`
+    );
+  }
+}
+
+// ---- Lv28: 予言者（math/rand/v2）----
+async function tryProphecyChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '予言の的中数', '占い中...');
+
+  try {
+    const result = await apiFetch('/battle/prophecy', { method: 'POST' });
+    const hits = result.predicted.filter((p, i) => p === result.actual[i]).length;
+    if (result.all_match) {
+      setChallengeRow(row, 'failed', `${hits}/12 的中`);
+      finishChallenge(
+        `${result.message} pkg/server/service/battle.go の RollCritical を math/rand/v2 に移行しよう。`
+      );
+    } else {
+      setChallengeRow(row, 'done', `${hits}/12 的中`);
+      finishChallenge(result.message);
+    }
+  } catch (e) {
+    setChallengeRow(row, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv6: 姿の見えない敵（JSONとフィールドの公開）----
+async function tryScoutChallenge(item) {
+  const listEl = resetChallengeList();
+  const rows = {
+    name: addChallengeRow(listEl, '名前', '偵察中...'),
+    hp: addChallengeRow(listEl, 'HP', '偵察中...'),
+    attack: addChallengeRow(listEl, '攻撃力', '偵察中...'),
+  };
+  try {
+    const result = await apiFetch('/battle/scout', { method: 'POST' });
+    if (result.name && result.hp && result.attack) {
+      setChallengeRow(rows.name, 'done', result.name);
+      setChallengeRow(rows.hp, 'done', String(result.hp));
+      setChallengeRow(rows.attack, 'done', String(result.attack));
+      finishChallenge('敵の正体を見破った！');
+    } else {
+      Object.values(rows).forEach(r => setChallengeRow(r, 'failed', '？？？'));
+      finishChallenge('偵察結果が空っぽだ…。pkg/server/service/stealth.go のフィールドを大文字にして jsonタグを付けよう。');
+    }
+  } catch (e) {
+    Object.values(rows).forEach(r => setChallengeRow(r, 'failed', 'エラー'));
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv7: 鏡の鎧（値レシーバ vs ポインタレシーバ）----
+async function tryMirrorChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '3回攻撃後のHP', '攻撃中...');
+  try {
+    const result = await apiFetch('/battle/mirror', { method: 'POST' });
+    if (result.ok) {
+      setChallengeRow(row, 'done', `${result.before} → ${result.after}`);
+      finishChallenge('攻撃が本体に届いた！鏡の鎧は砕け散った！');
+    } else {
+      setChallengeRow(row, 'failed', `${result.before} → ${result.after}`);
+      finishChallenge('攻撃がすべて鏡のコピーに吸われている…。pkg/server/service/mirror.go の TakeDamage をポインタレシーバにしよう。');
+    }
+  } catch (e) {
+    setChallengeRow(row, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv8: 戦利品の袋（nil map）----
+async function tryLootChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '戦利品の回収', '回収中...');
+  try {
+    const result = await apiFetch('/battle/loot', { method: 'POST' });
+    const items = Object.entries(result.loot).map(([k, v]) => `${k}×${v}`).join(' ');
+    setChallengeRow(row, 'done', items);
+    finishChallenge(result.message);
+  } catch (e) {
+    setChallengeRow(row, 'failed', 'panic!');
+    finishChallenge('袋が存在せず戦利品が床にぶちまけられた（panic）！pkg/server/service/loot.go — nil の map には書き込めない。make で袋を用意しよう。');
+  }
+}
+
+// ---- Lv9: 巨神Gopher（整数オーバーフロー）----
+async function tryTitanChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '合計ダメージ', '計算中...');
+  try {
+    const result = await apiFetch('/battle/titan', { method: 'POST' });
+    if (result.ok) {
+      setChallengeRow(row, 'done', `${result.total} / ${result.expected}`);
+      finishChallenge('ダメージが正しく積み上がった！巨神は崩れ落ちた！');
+    } else {
+      setChallengeRow(row, 'failed', `${result.total} / ${result.expected}`);
+      finishChallenge(`合計ダメージが ${result.total} になっている…！pkg/server/service/titan.go — int8 がオーバーフローしている。int に変えよう。`);
+    }
+  } catch (e) {
+    setChallengeRow(row, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv11: 討伐碑（string / rune / UTF-8）----
+async function tryEngraveChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '碑文', '刻んでいる...');
+  try {
+    const result = await apiFetch('/battle/engrave', { method: 'POST' });
+    const engraved = result.names.join(' ／ ');
+    if (result.ok) {
+      setChallengeRow(row, 'done', engraved);
+      finishChallenge('名は正しく刻まれた！');
+    } else {
+      setChallengeRow(row, 'failed', engraved);
+      finishChallenge('碑文が文字化けしている…！pkg/server/service/naming.go の EngraveName — バイトではなく rune（文字）で切り詰めよう。');
+    }
+  } catch (e) {
+    setChallengeRow(row, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv12: 分身Gopher（スライスの共有）----
+async function tryMirageChallenge(item) {
+  const listEl = resetChallengeList();
+  const bodyRow = addChallengeRow(listEl, '本体 (HP/攻/防)', '確認中...');
+  const mirageRow = addChallengeRow(listEl, '分身 (HP/攻/防)', '確認中...');
+  try {
+    const result = await apiFetch('/battle/mirage', { method: 'POST' });
+    setChallengeRow(mirageRow, 'done', result.mirage.join(' / '));
+    if (result.ok) {
+      setChallengeRow(bodyRow, 'done', result.body.join(' / '));
+      finishChallenge('本体は無傷のまま、分身だけを弱体化できた！本体を見破って撃破！');
+    } else {
+      setChallengeRow(bodyRow, 'failed', result.body.join(' / '));
+      finishChallenge('本体まで一緒に弱くなっている＝同じ配列を共有している証拠…。pkg/server/service/mirage.go で slices.Clone を使って複製しよう。');
+    }
+  } catch (e) {
+    setChallengeRow(bodyRow, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv13: 討伐隊の隊列（mapの順序）----
+async function tryFormationChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '5回の隊列', '整列中...');
+  try {
+    const result = await apiFetch('/battle/formation', { method: 'POST' });
+    if (result.stable) {
+      setChallengeRow(row, 'done', '5回とも同じ順序');
+      finishChallenge(`隊列は乱れない！（${result.lines[0].join('・')}）`);
+    } else {
+      setChallengeRow(row, 'failed', '毎回バラバラ');
+      finishChallenge(`隊列が組むたびに変わってしまう…（1回目: ${result.lines[0].slice(0, 4).join('・')}… / 2回目: ${result.lines[1].slice(0, 4).join('・')}…）pkg/server/service/formation.go — mapの順序は毎回ランダム。slices.Sort で並べ替えよう。`);
+    }
+  } catch (e) {
+    setChallengeRow(row, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv15: 宝物庫の扉（defer / rows.Close）----
+async function tryVaultChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '開きっぱなしの扉(DB接続)', '確認中...');
+  try {
+    const result = await apiFetch('/battle/vault', { method: 'POST' });
+    if (result.ok) {
+      setChallengeRow(row, 'done', `+${result.leaked}`);
+      finishChallenge('扉はすべて閉まっている！盗賊の逃げ道を断った！');
+    } else {
+      setChallengeRow(row, 'failed', `+${result.leaked}`);
+      finishChallenge(`15回覗いたら扉が ${result.leaked} 枚も開きっぱなしだ…！pkg/server/repository/enemy.go の PeekVault に defer rows.Close() を入れよう。`);
+    }
+  } catch (e) {
+    setChallengeRow(row, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv20: 伝令（http.Client の Timeout）----
+async function tryCourierChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '伝令の帰還', '返事を待っている...');
+
+  const dialogEl = document.getElementById('challenge-dialog');
+  let elapsed = 0;
+  const timer = setInterval(() => {
+    elapsed++;
+    dialogEl.textContent = `伝令が返事を待っている… ${elapsed}秒`;
+  }, 1000);
+
+  // フロント側タイムアウト（6秒で中断）
+  const controller = new AbortController();
+  const abort = setTimeout(() => controller.abort(), 6000);
+
+  try {
+    const result = await apiFetch('/battle/courier', { method: 'POST', signal: controller.signal });
+    clearTimeout(abort);
+    clearInterval(timer);
+    if (result.ok) {
+      setChallengeRow(row, 'done', `${result.elapsed_ms}ms で帰還`);
+      finishChallenge(result.message);
+    } else {
+      setChallengeRow(row, 'failed', '帰ってこない');
+      finishChallenge('伝令が帰ってこない…。pkg/server/service/courier.go の http.Client に Timeout を設定しよう。');
+    }
+  } catch (e) {
+    clearTimeout(abort);
+    clearInterval(timer);
+    setChallengeRow(row, 'failed', '音信不通');
+    finishChallenge('伝令は眠るギルドの前で立ち尽くしている…。pkg/server/service/courier.go の http.Client に Timeout: 2 * time.Second を設定しよう。');
+  }
+}
+
+// ---- Lv21: 城門への突撃（セマフォによる同時実行数制限）----
+async function tryAssaultChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '同時突撃数の最大', '突撃中...');
+  try {
+    const result = await apiFetch('/battle/assault', { method: 'POST' });
+    if (result.ok) {
+      setChallengeRow(row, 'done', `${result.peak}/${result.limit} 人`);
+      finishChallenge('騎士たちは整然と門を抜けた！城門を制圧！');
+    } else {
+      setChallengeRow(row, 'failed', `${result.peak}/${result.limit} 人`);
+      finishChallenge(`${result.peak}人が門に殺到して大渋滞だ…！pkg/server/service/assault.go — バッファ付きchannel（容量5）をセマフォにして同時実行数を制限しよう。`);
+    }
+  } catch (e) {
+    setChallengeRow(row, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv24: 使い魔（context.WithCancel）----
+async function tryFamiliarsChallenge(item) {
+  const listEl = resetChallengeList();
+  const row = addChallengeRow(listEl, '帰らない使い魔(goroutine)', '召喚中...');
+  try {
+    const result = await apiFetch('/battle/familiars', { method: 'POST' });
+    if (result.ok) {
+      setChallengeRow(row, 'done', `+${result.leaked} 体`);
+      finishChallenge('使い魔たちは仕事を終えて全員帰宅した！');
+    } else {
+      setChallengeRow(row, 'failed', `+${result.leaked} 体`);
+      finishChallenge(`${result.leaked} 体の使い魔が帰れずに働き続けている…。pkg/server/service/familiar.go — context.WithCancel で帰宅の合図を送れるようにしよう。`);
+    }
+  } catch (e) {
+    setChallengeRow(row, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
 function showAdvancedHint(item) {
-  document.getElementById('modal-lv').textContent = item.lv;
-  document.getElementById('modal-title').textContent = item.title;
-  document.getElementById('modal-hint').textContent = item.hint;
-  document.getElementById('help-modal').style.display = 'flex';
+  openHintModal(item.lv, item.title, item.hint);
+}
+
+// チャレンジ画面の「ヒント」ボタン用。実行中のチャレンジのヒントを表示する
+function showChallengeHint() {
+  if (currentChallengeItem) showAdvancedHint(currentChallengeItem);
 }
 
 function closeHelp(event) {
@@ -1000,8 +1514,9 @@ async function submitEditHP() {
     msg.textContent = `HPを ${hp} に設定しました！`;
   } catch (e) {
     msg.className = 'hp-editor-msg err';
-    if (e.message.includes('404') || e.message.includes('Not Found')) {
-      msg.textContent = 'APIが見つかりません (404) — main.go にルートを追加してください！';
+    // ルート未登録の場合、静的配信の GET /* があるため 405 が返る（404 のこともある）
+    if (e.message.includes('404') || e.message.includes('405') || e.message.includes('Not Found') || e.message.includes('Method Not Allowed')) {
+      msg.textContent = 'APIが見つかりません — pkg/server/handler/setting.go にルートを追加してください！';
     } else {
       msg.textContent = `Error: ${e.message}`;
     }
@@ -1017,15 +1532,17 @@ function setDialog(text) {
 }
 
 function setActionsEnabled(enabled) {
-  const btn = document.getElementById('btn-attack');
-  if (btn) btn.disabled = !enabled;
+  ['btn-attack', 'btn-skill'].forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = !enabled;
+  });
 }
 
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// サーバーメモリ表示（Lv9用）。表示だけなのでサーバーログには残さない。
+// サーバーメモリ表示（Lv23用）。表示だけなのでサーバーログには残さない。
 async function updateServerMem() {
   try {
     const res = await fetch(API + '/debug/memory');

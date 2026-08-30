@@ -1,3 +1,6 @@
+-- 日本語データが文字化けしないようクライアントの文字コードを固定する
+SET NAMES utf8mb4;
+
 USE gopher_slayer;
 
 -- ヒーロー（id=1 の1件のみ）
@@ -26,3 +29,30 @@ INSERT INTO enemies (stage_id, name, hp, max_hp, attack, experience_reward) VALU
 (4, 'デーモン',         150, 150, 22,   120),
 -- Lv3 のタスク: ボスが強いため PUT /api/hero/hp で HP を上げる必要がある
 (5, 'ボスドラゴン',     300, 300, 50,   200);
+
+-- チャレンジ（Lv6〜Lv28）で対決する敵
+-- unlock_exp: このEXPに達するとカードが解放される。倒すと +100 され次の敵が解放される
+INSERT INTO challenge_enemies (action, name, hp, max_hp, attack, unlock_exp) VALUES
+('scout',     'ステルスGopher',        55,  55, 13,  500),
+('mirror',    '鏡の鎧のGopher',        90,  90, 16,  600),
+('loot',      '袋持ちGopher',          60,  60, 14,  700),
+('overflow',  '巨神Gopher',           127, 127, 25,  800),
+('finish',    '不死のゾンビGopher',    66,  66, 18,  900),
+('engrave',   '名前喰いのGopher',      70,  70, 15, 1000),
+('mirage',    '分身Gopher',            75,  75, 20, 1100),
+('formation', '烏合のGopher軍団',      80,  80, 18, 1200),
+('phantom',   '幻の番人Gopher',        85,  85, 28, 1300),
+('vault',     '盗賊Gopher',            90,  90, 22, 1400),
+('challenge', '封印の番竜',           120, 120, 30, 1500),
+('horde',     'ゴブリンの群れ',       100, 100, 20, 1600),
+('interrupt', '詠唱するボスドラゴン', 150, 150, 40, 1700),
+('quest',     'のんびり調査隊',        95,  95, 14, 1800),
+('courier',   '居眠りGopherギルド',   100, 100, 12, 1900),
+('assault',   '城門のガーゴイル',     130, 130, 35, 2000),
+('spirit',    '漏れ出す悪霊',         110, 110, 26, 2100),
+('grudge',    '怨念の集合体',         115, 115, 24, 2200),
+('familiar',  '暴走した使い魔',       120, 120, 30, 2300),
+('curse',     '呪いの爆弾魔',         140, 140, 44, 2400),
+('report',    '記録係のゴブリン',     100, 100, 12, 2500),
+('decode',    '古文書の精霊',         125, 125, 22, 2600),
+('prophecy',  '予言者',               200, 200, 50, 2700);

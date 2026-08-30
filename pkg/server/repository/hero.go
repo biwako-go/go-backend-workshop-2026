@@ -15,12 +15,6 @@ func NewHeroRepository(db *sql.DB) *HeroRepository {
 }
 
 // Get はヒーロー（id=1）を取得する。
-//
-// [Lv15 バグ仕込み箇所]
-// どの層の関数も context.Context を受け取っていないため、
-// クライアントが切断してもDBクエリを止められない。
-// handler → service → repository の全層に ctx を第1引数で伝播させ、
-// QueryRow を QueryRowContext に、Exec を ExecContext に置き換えよう。
 func (r *HeroRepository) Get() (*service.Hero, error) {
 	hero := &service.Hero{}
 	row := r.db.QueryRow(`

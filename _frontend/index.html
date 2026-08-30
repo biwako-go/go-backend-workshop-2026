@@ -64,7 +64,7 @@
       <!-- Center: Stage List -->
       <div class="stage-list-panel">
         <div class="panel-title">ステージ選択</div>
-        <!-- 古文書の言い伝え（Lv19: 表示が毎回遅いのが症状） -->
+        <!-- 古文書の言い伝え（Lv27: 表示が毎回遅いのが症状） -->
         <div class="legend-line" id="legend-line">古文書を解読中……</div>
         <div class="stage-list" id="stage-list">
           <p class="loading-text">Loading...</p>
@@ -107,7 +107,7 @@
           <!-- Enemy sprite (right dirt circle) -->
           <img class="battle-enemy-sprite" id="enemy-sprite" src="" alt="enemy" />
 
-          <!-- Server memory badge (Lv9: 戦うほど増えたら怪しい) -->
+          <!-- Server memory badge (Lv23: 戦うほど増えたら怪しい) -->
           <div class="server-mem-badge">サーバーメモリ: <span id="server-mem">--</span> MB</div>
 
           <!-- Hero sprite (left dirt circle) -->
@@ -139,8 +139,9 @@
             <img src="/images/icons/battle-punch.png" alt="" />
             <span>たたかう</span>
           </button>
-          <button class="cmd-btn dummy" id="btn-bag">
-            <span>バッグ</span>
+          <button class="cmd-btn" id="btn-skill" onclick="heroSkill()">
+            <img src="/images/icons/battle-punch.png" alt="" />
+            <span>わざ</span>
           </button>
           <button class="cmd-btn" id="btn-help" onclick="showHelp()">
             <span>ヘルプ</span>
@@ -198,6 +199,15 @@
       <div class="challenge-field-wrap">
         <div class="challenge-field">
           <div class="challenge-header" id="challenge-header">封印解除チャレンジ</div>
+          <div class="challenge-enemy">
+            <img class="challenge-enemy-sprite" id="challenge-enemy-sprite" src="" alt="" />
+            <div class="challenge-enemy-name" id="challenge-enemy-name"></div>
+            <div class="battle-hp-bar-wrap challenge-hp-wrap">
+              <span class="battle-hp-label">HP</span>
+              <div class="battle-hp-bar"><div class="battle-hp-fill" id="challenge-hp-fill" style="width:100%"></div></div>
+              <span class="battle-hp-text" id="challenge-hp-text"></span>
+            </div>
+          </div>
           <div class="challenge-condition" id="challenge-condition">5つの封印を <strong>3秒以内</strong> にすべて解け</div>
           <div class="seal-list" id="seal-list"></div>
         </div>
@@ -208,9 +218,16 @@
         </div>
 
         <!-- Command -->
-        <div class="battle-commands" style="grid-template-columns: 1fr;">
-          <button class="cmd-btn back-btn" id="challenge-back-btn" onclick="goToStageSelect()" disabled>
-            <span>もどる</span>
+        <div class="battle-commands" style="grid-template-columns: 1fr 1fr 1fr;">
+          <button class="cmd-btn" id="challenge-attack-btn" onclick="challengeAttack()">
+            <img src="/images/icons/battle-punch.png" alt="" />
+            <span>たたかう</span>
+          </button>
+          <button class="cmd-btn" id="challenge-hint-btn" onclick="showChallengeHint()">
+            <span>ヒント</span>
+          </button>
+          <button class="cmd-btn back-btn" id="challenge-back-btn" onclick="goToStageSelect()">
+            <span>にげる</span>
           </button>
         </div>
       </div>

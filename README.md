@@ -19,7 +19,7 @@ _frontend/               # ゲーム画面（参加者は触らない）
 
 ## 前提
 
-- **Go 1.25 以上**（Lv23 の `testing/synctest` に必要）
+- **Go 1.22 以上**（Lv28 の `math/rand/v2` に必要）
 - Docker
 
 ## 起動
@@ -32,7 +32,7 @@ make setup
 make up
 
 # アプリ起動（ファイル保存で自動リロード）
-make dev
+make start
 ```
 
 http://localhost:8080 でゲームが開きます。
@@ -44,17 +44,26 @@ http://localhost:8080 でゲームが開きます。
 
 # DB を止める
 make down
+```
 
-# DB のデータごと消す（リセット）
+## リセット
+
+```bash
+# ゲームの進捗（DB）だけを初期状態に戻す
+make reset-db
+
+# ⚠️ 完全リセット: コードの修正内容とゲームの進捗をすべて配布時の状態に戻す
+# （自分で書いたコードも消えるので注意。実行前に確認プロンプトが出ます）
 make reset
 ```
 
 ## その他のコマンド
 
 ```bash
-make test    # テスト実行
-make race    # データ競合の検出（Lv8）
-make bench   # ベンチマーク（Lv13）
+make test      # テスト実行
+make race      # データ競合の検出（Lv17）
+make bench     # ベンチマーク（Lv26）
+make dev-test  # 配布状態チェック: 全Lvのバグが想定通りに壊れているか検証（講師向け・要DB起動）
 ```
 
 ## トラブルシューティング
@@ -62,11 +71,10 @@ make bench   # ベンチマーク（Lv13）
 **DB に接続できない**
 
 DB の起動が間に合っていない可能性があります。少し待ってから再実行してください。
-それでも失敗する場合はコンテナをリセットします。
+それでも失敗する場合は DB をリセットします（コードは消えません）。
 
 ```bash
-make reset
-make up
+make reset-db
 ```
 
 **ポート 3307 が使用中**
