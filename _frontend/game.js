@@ -243,7 +243,7 @@ const STAGE_HINTS = {
   3: {
     lv: 'Lv3',
     title: 'HP更新のルートを追加しよう',
-    hint: 'pkg/server/handler/setting.go にルート登録が必要です。\napi.PUT("/hero/hp", hero.UpdateHP) を追加すると\nHP編集ボタンが使えるようになります。',
+    hint: 'ダークナイト（攻撃120）は素のHP100では一撃でGAME OVER。\nHP編集で盛ってから挑もう（700以上推奨）。\n\npkg/server/handler/setting.go にルート登録が必要です。\napi.PUT("/hero/hp", hero.UpdateHP) を追加すると\nHP編集ボタンが使えるようになります。',
   },
   4: {
     lv: 'Lv4',
