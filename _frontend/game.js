@@ -814,19 +814,29 @@ async function challengeAttack() {
 // チャレンジ画面を開く: 敵が現れるだけで、判定は「たたかう」を押したときに行う
 function openChallengeScreen(item) {
   showScreen('challenge-screen');
-  document.getElementById('challenge-header').textContent = item.title;
-  document.getElementById('challenge-condition').innerHTML = item.condition;
+  document.getElementById('challenge-condition').innerHTML =
+    `<strong>${item.lv} ${item.title}</strong>` + '<br>' + item.condition;
   document.getElementById('challenge-dialog').textContent = `${item.db.name} が あらわれた！`;
   document.getElementById('challenge-back-btn').disabled = false;
   document.getElementById('challenge-attack-btn').disabled = false;
 
-  // 対決する敵（DBの challenge_enemies から取得済み）を表示する
+  // 敵（奥）: DBの challenge_enemies の情報を表示する
   const sprite = document.getElementById('challenge-enemy-sprite');
   const nameEl = document.getElementById('challenge-enemy-name');
   sprite.classList.remove('defeated', 'rage');
   sprite.src = item.img;
   nameEl.textContent = item.db.name;
   updateChallengeHP(item.db.max_hp, item.db.max_hp);
+
+  // 味方（手前）: ヒーローのステータスを表示する
+  if (hero) {
+    document.getElementById('challenge-hero-name').textContent = hero.name;
+    document.getElementById('challenge-hero-lv').textContent = hero.level;
+    const pct = Math.max(0, Math.min(100, (hero.hp / hero.max_hp) * 100));
+    document.getElementById('challenge-hero-hp').textContent = `${hero.hp}/${hero.max_hp}`;
+    document.getElementById('challenge-hero-hp-fill').style.width = pct + '%';
+  }
+
   document.getElementById('seal-list').innerHTML = '';
 }
 
@@ -887,6 +897,28 @@ async function finishChallenge(message) {
     }
   }
   document.getElementById('challenge-dialog').textContent = prefix + message;
+
+  // 勝利したら、撃破演出を見せてからリザルト画面へ（ステージクリアと同じ流れ）
+  if (hasDone && !hasFailed && db) {
+    setTimeout(() => showChallengeResult(db), 1800);
+  }
+}
+
+// チャレンジ勝利のリザルト画面（ステージと同じ result-screen を使う）
+function showChallengeResult(db) {
+  // すでに「にげる」等で画面を離れていたら何もしない
+  if (!document.getElementById('challenge-screen').classList.contains('active')) return;
+  showScreen('result-screen');
+  document.getElementById('result-icon').textContent = '🏆';
+  const title = document.getElementById('result-title');
+  title.textContent = 'チャレンジクリア！';
+  title.className = 'result-title win';
+  const allCleared = hero && hero.experience >= 2800; // Lv28撃破でEXP2800
+  document.getElementById('result-detail').innerHTML = `
+    <strong>${db.name}</strong> を討伐した！<br>
+    合計EXP: <strong>${hero ? hero.experience : '-'}</strong><br>
+    ${allCleared ? '全チャレンジ制覇！おめでとう！🎉' : '次のチャレンジが解放された！'}
+  `;
 }
 
 // チャレンジ画面の敵HPバーを更新する

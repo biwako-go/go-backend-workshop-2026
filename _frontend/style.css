@@ -411,31 +411,54 @@ html, body {
   text-align: center;
 }
 
-/* チャレンジ画面の敵（対決演出） */
-.challenge-enemy {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
+/* チャレンジ画面: 挑戦条件バナー（上部中央） */
+.challenge-topbar {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 46%;
+  font-size: 11px;
+  color: #f0e0a0;
+  background: rgba(50, 30, 10, 0.8);
+  border: 1px solid #c8a06a;
+  border-radius: 3px;
+  padding: 4px 12px;
+  text-align: center;
+  z-index: 3;
 }
 
-.challenge-enemy-sprite {
-  width: 130px;
-  height: 130px;
-  object-fit: contain;
-  filter: drop-shadow(2px 4px 4px rgba(0, 0, 0, 0.45));
+.challenge-topbar strong {
+  color: #f0d040;
+}
+
+/* チャレンジ画面: 判定の進捗（左側オーバーレイ） */
+.challenge-tracker {
+  position: absolute;
+  left: 12px;
+  top: 110px;
+  width: 300px;
+  z-index: 3;
+}
+
+.challenge-tracker .seal-list {
+  gap: 4px;
+}
+
+/* 敵スプライトの撃破/激怒演出（バトルと同じ配置の敵に適用） */
+#challenge-enemy-sprite {
   transition: transform 0.6s ease, opacity 0.6s ease, filter 0.6s ease;
 }
 
 /* 勝利: 敵を撃破（倒れてグレーアウト） */
-.challenge-enemy-sprite.defeated {
+#challenge-enemy-sprite.defeated {
   transform: rotate(100deg) translateY(14px);
   opacity: 0.25;
   filter: grayscale(1);
 }
 
 /* 失敗: 敵が吠える */
-.challenge-enemy-sprite.rage {
+#challenge-enemy-sprite.rage {
   animation: enemy-rage 0.5s ease-in-out 2;
 }
 

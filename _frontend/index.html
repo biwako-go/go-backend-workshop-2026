@@ -191,33 +191,59 @@
     </div>
   </div>
 
-  <!-- ========== CHALLENGE SCREEN ========== -->
+  <!-- ========== CHALLENGE SCREEN（バトル画面と同一レイアウト） ========== -->
   <div id="challenge-screen" class="screen">
-    <div class="challenge-layout">
+    <div class="battle-layout">
 
-      <!-- Main Area -->
-      <div class="challenge-field-wrap">
-        <div class="challenge-field">
-          <div class="challenge-header" id="challenge-header">封印解除チャレンジ</div>
-          <div class="challenge-enemy">
-            <img class="challenge-enemy-sprite" id="challenge-enemy-sprite" src="" alt="" />
-            <div class="challenge-enemy-name" id="challenge-enemy-name"></div>
-            <div class="battle-hp-bar-wrap challenge-hp-wrap">
+      <!-- Left: Battle Field -->
+      <div class="battle-field-wrap">
+        <div class="battle-field">
+
+          <!-- 挑戦条件（上部中央のバナー） -->
+          <div class="challenge-topbar" id="challenge-condition"></div>
+
+          <!-- Enemy status box (top-left) -->
+          <div class="battle-enemy-info">
+            <span class="battle-enemy-name" id="challenge-enemy-name">Enemy</span>
+            <div class="battle-hp-bar-wrap">
               <span class="battle-hp-label">HP</span>
               <div class="battle-hp-bar"><div class="battle-hp-fill" id="challenge-hp-fill" style="width:100%"></div></div>
               <span class="battle-hp-text" id="challenge-hp-text"></span>
             </div>
           </div>
-          <div class="challenge-condition" id="challenge-condition">5つの封印を <strong>3秒以内</strong> にすべて解け</div>
-          <div class="seal-list" id="seal-list"></div>
+
+          <!-- Enemy sprite (right dirt circle) -->
+          <img class="battle-enemy-sprite" id="challenge-enemy-sprite" src="" alt="enemy" />
+
+          <!-- 判定の進捗（左側オーバーレイ） -->
+          <div class="challenge-tracker">
+            <div class="seal-list" id="seal-list"></div>
+          </div>
+
+          <!-- Hero sprite (left dirt circle) -->
+          <img class="battle-hero-sprite" src="/images/gopher-enemies/gopher-shigaraki-back.png" alt="hero" />
+
+          <!-- Hero status box (bottom-right) -->
+          <div class="battle-hero-info">
+            <span class="battle-hero-name">
+              <span id="challenge-hero-name">Gopher</span>
+              <span class="battle-hero-lv">Lv<span id="challenge-hero-lv">1</span></span>
+            </span>
+            <div class="battle-hp-bar-wrap">
+              <span class="battle-hp-label">HP</span>
+              <div class="battle-hp-bar hero-bar"><div class="battle-hp-fill hero-fill" id="challenge-hero-hp-fill" style="width:100%"></div></div>
+              <span class="battle-hp-text" id="challenge-hero-hp"></span>
+            </div>
+          </div>
+
         </div>
 
         <!-- Dialog box -->
         <div class="battle-dialog">
-          <div class="dialog-text" id="challenge-dialog">封印の解除を開始する...</div>
+          <div class="dialog-text" id="challenge-dialog">どうする？</div>
         </div>
 
-        <!-- Command -->
+        <!-- Command buttons -->
         <div class="battle-commands" style="grid-template-columns: 1fr 1fr 1fr;">
           <button class="cmd-btn" id="challenge-attack-btn" onclick="challengeAttack()">
             <img src="/images/icons/battle-punch.png" alt="" />
