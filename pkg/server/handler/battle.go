@@ -124,6 +124,18 @@ func (h *BattleHandler) Titan(c echo.Context) error {
 	})
 }
 
+// Finish は不死のゾンビにとどめの一撃を放つ処理（Lv10の判定用）。
+// POST /api/battle/finish
+func (h *BattleHandler) Finish(c echo.Context) error {
+	before := 66 // 不死のゾンビのHP（challenge_enemies の finish と同じ値）
+	after := service.FinishingBlow(before, 9999)
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"before": before,
+		"after":  after,
+		"ok":     after == 0,
+	})
+}
+
 // Engrave は討伐碑に敵の名前を刻む処理（Lv11の判定用）。
 // POST /api/battle/engrave
 func (h *BattleHandler) Engrave(c echo.Context) error {

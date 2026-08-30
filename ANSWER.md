@@ -216,7 +216,7 @@ return total
 
 ## Lv10：不死身の呪いを解け（テストでバグを見つける）
 
-**テストケース例：**
+**テストケース例（`undead_test.go`）：**
 
 ```go
 tests := []struct {
@@ -231,11 +231,11 @@ tests := []struct {
 }
 ```
 
-**修正ファイル：** `pkg/server/service/battle.go` の `ApplyDamage`
+**修正ファイル：** `pkg/server/service/undead.go` の `FinishingBlow`
 
 ```go
 // 修正前
-func ApplyDamage(currentHP, damage int) int {
+func FinishingBlow(currentHP, damage int) int {
     if currentHP-damage < 0 {
         return 1  // ← バグ: 0 にすべき
     }
@@ -243,13 +243,15 @@ func ApplyDamage(currentHP, damage int) int {
 }
 
 // 修正後
-func ApplyDamage(currentHP, damage int) int {
+func FinishingBlow(currentHP, damage int) int {
     if currentHP-damage < 0 {
         return 0
     }
     return currentHP - damage
 }
 ```
+
+補足：通常バトルの `ApplyDamage`（battle.go）は最初から正しい実装で、どのレベルでもHPが0になればGAME OVERになる（全回復してステージ選択へ戻る）。
 
 ---
 

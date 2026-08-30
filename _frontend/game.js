@@ -77,9 +77,9 @@ const ADVANCED_CHALLENGES = [
   {
     lv: 'Lv10',
     title: '不死身の呪いを解け',
-    hint: '症状: 致死ダメージを受けてもHPが1残って死なない（不死身の呪い）。\npkg/server/service/battle.go の ApplyDamage にバグがある。\nおすすめ: battle_test.go にテストケースを追加して見つけよう。\n\nコマンド:\ngo test ./pkg/server/service/ -run TestApplyDamage -v',
+    hint: '症状: 不死のゾンビにとどめを刺してもHPが1残って立ち上がってくる。\npkg/server/service/undead.go の FinishingBlow にバグがある。\nおすすめ: undead_test.go にテストケースを追加して見つけよう。\n\nコマンド:\ngo test ./pkg/server/service/ -run TestFinishingBlow -v',
     action: 'finish',
-    condition: '致死ダメージを受けたらHPは <strong>0</strong> になること',
+    condition: 'とどめの一撃で残りHPが <strong>0</strong> になること（1残ると復活してしまう）',
     img: '/images/gopher-enemies/gopher-zombie.png',
   },
   {
@@ -1168,23 +1168,20 @@ async function tryCurseChallenge(item) {
   }
 }
 
-// ---- Lv10: 不死身の呪い（ApplyDamage）----
+// ---- Lv10: 不死身の呪い（FinishingBlow）----
 async function tryFinishChallenge(item) {
   const listEl = resetChallengeList();
-  const row = addChallengeRow(listEl, '致死ダメージ後のHP', '判定中...');
+  const row = addChallengeRow(listEl, 'とどめの一撃後のHP', '判定中...');
 
   try {
-    const result = await apiFetch('/battle/enemy-attack', {
-      method: 'POST',
-      body: JSON.stringify({ enemy_attack: 9999, enemy_name: 'ゴブリン', hero_hp: 10 }),
-    });
-    if (result.new_hero_hp === 0) {
-      setChallengeRow(row, 'done', 'HP 0');
-      finishChallenge('ヒーローは倒れた…とどめが正しく通る！不死身の呪いは解けている！');
+    const result = await apiFetch('/battle/finish', { method: 'POST' });
+    if (result.ok) {
+      setChallengeRow(row, 'done', `${result.before} → 0`);
+      finishChallenge('とどめが通った！ゾンビは今度こそ倒れた！不死身の呪いは解けた！');
     } else {
-      setChallengeRow(row, 'failed', `HP ${result.new_hero_hp}`);
+      setChallengeRow(row, 'failed', `${result.before} → ${result.after} で復活`);
       finishChallenge(
-        `HPが ${result.new_hero_hp} 残って死なない…不死身の呪いだ！pkg/server/service/battle.go の ApplyDamage を直そう（battle_test.go にテストを書いて見つけるのがおすすめ）。`
+        `とどめを刺してもHPが ${result.after} 残って立ち上がってくる…不死身の呪いだ！pkg/server/service/undead.go の FinishingBlow を直そう（undead_test.go にテストを書いて見つけるのがおすすめ）。`
       );
     }
   } catch (e) {

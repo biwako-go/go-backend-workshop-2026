@@ -2,13 +2,13 @@ package service
 
 import "testing"
 
-// TestApplyDamage は ApplyDamage 関数のテスト。
+// TestFinishingBlow は FinishingBlow 関数のテスト（Lv10）。
 // テストケースを追加して、バグを見つけよう。
 //
 // 実行方法:
 //
-//	go test ./pkg/server/service/ -run TestApplyDamage -v
-func TestApplyDamage(t *testing.T) {
+//	go test ./pkg/server/service/ -run TestFinishingBlow -v
+func TestFinishingBlow(t *testing.T) {
 	tests := []struct {
 		name      string
 		currentHP int
@@ -19,9 +19,9 @@ func TestApplyDamage(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ApplyDamage(tt.currentHP, tt.damage)
+			got := FinishingBlow(tt.currentHP, tt.damage)
 			if got != tt.want {
-				t.Errorf("ApplyDamage(%d, %d) = %d, want %d", tt.currentHP, tt.damage, got, tt.want)
+				t.Errorf("FinishingBlow(%d, %d) = %d, want %d", tt.currentHP, tt.damage, got, tt.want)
 			}
 		})
 	}

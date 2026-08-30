@@ -180,24 +180,24 @@ curl -X POST http://localhost:8080/api/battle/enemy-attack \
 
 ## Lv10：不死身の呪いを解け
 
-**症状：** 致死ダメージを受けてもHPが1残って死なない（GAME OVERにならない）。チャレンジ「不死身の呪い」で判定できる。
+**症状：** 不死のゾンビにとどめの一撃を刺しても、HPが1残って何度でも立ち上がってくる（倒しきれない）。
 
-**修正箇所：** `pkg/server/service/battle.go` の `ApplyDamage`
+**修正箇所：** `pkg/server/service/undead.go` の `FinishingBlow`
 
 **やること：** いきなりコードを読まず、**テストを書いてバグを見つけよう**。
 
-1. `pkg/server/service/battle_test.go` のテーブルにケースを追加する（HPが残るケース・ちょうど0のケース・致死のケース…）
+1. `pkg/server/service/undead_test.go` のテーブルにケースを追加する（HPが残るケース・ちょうど0のケース・致死のケース…）
 2. テストを実行して、失敗するケースからバグを特定する
 
 ```bash
-go test ./pkg/server/service/ -run TestApplyDamage -v
+go test ./pkg/server/service/ -run TestFinishingBlow -v
 ```
 
-3. `ApplyDamage` を修正してテストが通ることを確認する
+3. `FinishingBlow` を修正してテストが通ることを確認する
 
-**クリア判定：** チャレンジで「致死ダメージ後のHP」が0になればOK（テストも全部通ること）。
+**クリア判定：** チャレンジでとどめの一撃後のHPが 66 → 0 になればOK（テストも全部通ること）。
 
-**体験できること：** テーブル駆動テスト、`go test` の使い方、テストでバグを発見する体験
+**体験できること：** テーブル駆動テスト、`go test` の使い方、テストでバグを発見する体験（境界値のバグ）
 
 ---
 

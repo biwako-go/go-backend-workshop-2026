@@ -92,9 +92,9 @@ code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/battle/loot")
 okv=$(curl -s -X POST "$API/battle/titan" | jget "['ok']")
 [ "$okv" = "False" ] && ok "Lv9  合計ダメージがオーバーフローする" || ng "Lv9  合計が正しい（int化済み？）"
 
-# --- Lv10: 致死ダメージでHPが1残る ---
-hp=$(curl -s -X POST "$API/battle/enemy-attack" -H "$CT" -d '{"enemy_attack":20,"enemy_name":"ゴブリン","hero_hp":10}' | jget "['new_hero_hp']")
-[ "$hp" = "1" ] && ok "Lv10 致死ダメージでHPが1残る" || ng "Lv10 HPが $hp になる（修正済み？）"
+# --- Lv10: とどめを刺してもゾンビのHPが1残る ---
+after=$(curl -s -X POST "$API/battle/finish" | jget "['after']")
+[ "$after" = "1" ] && ok "Lv10 とどめを刺してもHPが1残る（不死身）" || ng "Lv10 残りHPが ${after} になる（修正済み？）"
 
 # --- Lv11: 碑文が文字化け（バイト切断） ---
 okv=$(curl -s -X POST "$API/battle/engrave" | jget "['ok']")

@@ -86,13 +86,11 @@ func BuildBattleReport(logs []string) string {
 	return report
 }
 
-// ApplyDamage はダメージを適用し、HP（0以上）を返す。
-//
-// [Lv10 バグ仕込み箇所]
-// テストを書いてバグを見つけよう。
+// ApplyDamage はダメージを適用し、残りHP（0以上）を返す。
+// HPが0になるとゲームオーバーになる（この関数は正しい実装。変更しなくてよい）。
 func ApplyDamage(currentHP, damage int) int {
 	if currentHP-damage < 0 {
-		return 1 // ← バグ: 0 にすべき
+		return 0
 	}
 	return currentHP - damage
 }

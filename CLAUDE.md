@@ -60,8 +60,8 @@ handler → service → repository → DB
 │       │   └── debug.go       # メモリ/goroutine観測API（Lv22, Lv23観測用・変更不要）
 │       ├── service/
 │       │   ├── hero.go / stage.go / enemy.go  # struct定義（enemy.go に ChallengeEnemy も）
-│       │   ├── battle.go      # ダメージ計算（Lv1, Lv5, Lv10, Lv22, Lv23, Lv26, Lv28バグ箇所）
-│       │   ├── battle_test.go # Lv10 スターターテスト
+│       │   ├── battle.go      # ダメージ計算（Lv1, Lv5, Lv22, Lv23, Lv26, Lv28バグ箇所）
+│       │   ├── undead.go      # 不死のゾンビ（Lv10バグ箇所）+ undead_test.go スターター
 │       │   ├── report_bench_test.go # Lv26 スターターベンチマーク
 │       │   ├── stealth.go     # 偵察（Lv6） / mirror.go 鏡の鎧（Lv7） / loot.go 戦利品（Lv8）
 │       │   ├── titan.go       # 巨神（Lv9） / naming.go 討伐碑（Lv11） / mirage.go 分身（Lv12）
@@ -102,7 +102,7 @@ handler → service → repository → DB
 | Lv7 | `pkg/server/service/mirror.go` の `TakeDamage` | 値レシーバでHPが減らない（ポインタレシーバが正解）。判定 `/battle/mirror` |
 | Lv8 | `pkg/server/service/loot.go` の `CollectLoot` | nil map への書き込みで panic（make が正解）。判定 `/battle/loot` |
 | Lv9 | `pkg/server/service/titan.go` の `ChallengeTitan` | 合計を int8 で数えてオーバーフロー（int が正解）。判定 `/battle/titan` |
-| Lv10 | `pkg/server/service/battle.go` の `ApplyDamage` | 致死ダメージ時に `return 1`（正しくは `return 0`）。テストで発見する想定。判定は「不死身の呪い」チャレンジ |
+| Lv10 | `pkg/server/service/undead.go` の `FinishingBlow` | 致死ダメージ時に `return 1`（正しくは `return 0`）。undead_test.go で発見する想定。判定 `/battle/finish`。通常バトルの `ApplyDamage` は最初から正しく、HP0でGAME OVER→全回復が全Lvで機能する |
 | Lv11 | `pkg/server/service/naming.go` の `EngraveName` | `s[:5]` のバイト切断で日本語名が文字化け（[]rune が正解）。判定 `/battle/engrave` |
 | Lv12 | `pkg/server/service/mirage.go` の `ChallengeMirage` | スライス代入で配列を共有し本体まで弱体化（slices.Clone が正解）。判定 `/battle/mirage` |
 | Lv13 | `pkg/server/service/formation.go` の `FormBattleLine` | map の range 順序がランダムで隊列が毎回変わる（slices.Sort が正解）。判定 `/battle/formation` |

@@ -35,6 +35,7 @@ func RegisterRoutes(e *echo.Echo, hero *HeroHandler, stage *StageHandler, battle
 	api.POST("/battle/report", battle.Report)
 	api.POST("/battle/prophecy", battle.Prophecy)
 	api.POST("/battle/scout", battle.Scout)
+	api.POST("/battle/finish", battle.Finish)
 	api.POST("/battle/mirror", battle.Mirror)
 	api.POST("/battle/loot", battle.Loot)
 	api.POST("/battle/titan", battle.Titan)

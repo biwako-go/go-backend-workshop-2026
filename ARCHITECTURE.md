@@ -128,13 +128,14 @@ e.Start(":8080")  … サーバー起動
 | GET | `/legend` | 古文書の言い伝え | **Lv27** |
 | POST | `/legend/speedread` | 古文書の速読（判定用） | **Lv27** |
 | POST | `/battle/attack` | ヒーローの攻撃 | **Lv1**, **Lv4**, **Lv23**, **Lv28** |
-| POST | `/battle/enemy-attack` | 敵の攻撃 | **Lv5**, **Lv10**, **Lv22** |
+| POST | `/battle/enemy-attack` | 敵の攻撃 | **Lv5**, **Lv22** |
 | POST | `/battle/horde` | 群れ討伐 | **Lv17** |
 | POST | `/battle/interrupt` | 詠唱中断 | **Lv18** |
 | POST | `/battle/defuse` | 呪いの爆弾解除 | **Lv25** |
 | POST | `/battle/report` | 討伐報告書の作成（判定用） | **Lv26** |
 | POST | `/battle/prophecy` | 予言者の会心予知（判定用） | **Lv28** |
 | POST | `/battle/scout` | 敵の偵察（判定用） | **Lv6** |
+| POST | `/battle/finish` | 不死のゾンビへのとどめ（判定用） | **Lv10** |
 | POST | `/battle/mirror` | 鏡の鎧への攻撃（判定用） | **Lv7** |
 | POST | `/battle/loot` | 戦利品の回収（判定用） | **Lv8** |
 | POST | `/battle/titan` | 巨神への合計ダメージ検分（判定用） | **Lv9** |

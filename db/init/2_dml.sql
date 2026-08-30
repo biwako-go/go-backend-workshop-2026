@@ -24,7 +24,8 @@ INSERT INTO stages (name, description, required_experience, order_num) VALUES
 INSERT INTO enemies (stage_id, name, hp, max_hp, attack, experience_reward) VALUES
 (1, 'ゴブリン',         40,  40,  8,    40),
 (2, 'ロックモンスター', 70,  70,  12,   60),
-(3, 'ダークナイト',     100, 100, 2000, 80),
+(3, 'ダークナイト',     100, 100, 120,  80),
+-- ダークナイト(攻撃120)は素のHP100では1撃で倒される。Lv3のHP編集で700以上に盛って挑む想定
 -- Lv4 のバグ仕込み対象（handler/battle.go の Attack で攻撃反転）
 (4, 'デーモン',         150, 150, 22,   120),
 -- Lv3 のタスク: ボスが強いため PUT /api/hero/hp で HP を上げる必要がある
