@@ -700,20 +700,27 @@ function showResultScreen(isWin, clearResult) {
   const detail = document.getElementById('result-detail');
 
   if (isWin) {
-    icon.textContent = '🏆';
-    title.textContent = 'クリア！';
-    title.className = 'result-title win';
+    // Lv2: EXPがDBに保存されていない場合は、見出しごと「バグ発見」の演出にする
+    // （hero はクリア直後に GET /api/hero で取り直したDB上の値）
+    const unsaved = hero && clearResult && hero.experience < clearResult.new_experience;
+    if (unsaved) {
+      icon.textContent = '🐛';
+      title.textContent = 'クリア…できたはず？';
+      title.className = 'result-title lose';
+    } else {
+      icon.textContent = '🏆';
+      title.textContent = 'クリア！';
+      title.className = 'result-title win';
+    }
     detail.innerHTML = `
       Stage: <strong>${currentStage.name}</strong><br>
       EXP獲得: <strong>+${clearResult.experience_gained}</strong><br>
       合計EXP: <strong>${clearResult.new_experience}</strong>
     `;
-    // Lv2: 画面上はEXPが増えたのにDBに保存されていない場合は「バグ発見」の演出を出す
-    // （hero はクリア直後に GET /api/hero で取り直したDB上の値）
-    if (hero && hero.experience < clearResult.new_experience) {
+    if (unsaved) {
       detail.innerHTML += `
         <div class="exp-warning">
-          🐛 <strong>バグ発見！</strong> 画面ではEXPが増えたのに、サーバー（DB）には保存されていない。<br>
+          🐛 <strong>バグ発見！</strong> 敵は倒したのに、EXPがサーバー（DB）に保存されていない＝<strong>システム上はクリアになっていない</strong>。<br>
           このまま先へ進めるが、<strong>リロードすると進捗がすべて消えてしまう</strong>。<br>
           → これが <strong>Lv2</strong> の課題。pkg/server/handler/stage.go の ClearStage を修正しよう
         </div>
