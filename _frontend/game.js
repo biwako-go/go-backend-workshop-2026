@@ -9,6 +9,7 @@ const API = '/api';
 
 // ---- Global State ----
 let hero = null;          // fetched from server
+let sessionExp = 0;       // このセッション中に稼いだEXP（リロードで消える＝Lv2の症状）
 let currentStage = null;  // currently selected stage
 let enemies = [];         // enemies for current stage
 let enemyIndex = 0;       // which enemy we are fighting
@@ -321,6 +322,11 @@ function updateCharCard(h) {
   document.getElementById('cc-exp').textContent = h.experience;
   document.getElementById('cc-atk').textContent = h.attack;
 
+  // Lv2: DBに保存されていないセッション中のEXPがあれば警告バッジを出す
+  const unsaved = sessionExp - h.experience;
+  const badge = document.getElementById('cc-exp-unsaved');
+  if (badge) badge.textContent = unsaved > 0 ? ` +${unsaved} 未保存🐛` : '';
+
   const pct = Math.max(0, (h.hp / h.max_hp) * 100);
   const fill = document.getElementById('cc-hp-fill');
   fill.style.width = pct + '%';
@@ -381,6 +387,8 @@ async function loadHeroAndStages() {
     hero = await apiFetch('/hero');
     updateCharCard(hero);
     heroHP = hero.hp;
+    // DBに保存されているEXPが正。セッションEXPはリロードでここまで戻る
+    sessionExp = Math.max(sessionExp, hero.experience);
 
     await loadChallengeEnemies();
     const stages = await apiFetch('/stages');
@@ -419,9 +427,17 @@ function renderStageList(stages) {
   // ---- ステージ section ----
   container.appendChild(makeSectionHeader('ステージ', 'stage-section-header'));
 
+  // セッションEXPで解放できるのは「DB基準で最初に🔒になるステージ」1つだけ。
+  // 前のステージをクリアした直後に次へは進めるが、EXPがDBに保存されない限り
+  // （= Lv2を直さない限り）その先のステージは開かない。リロードでもDB基準に戻る。
+  const firstLocked = stages.find(st => !st.is_unlocked);
+
   stages.forEach(stage => {
+    const sessionUnlocked = firstLocked && stage.id === firstLocked.id
+      && sessionExp >= stage.required_experience;
+    const unlocked = stage.is_unlocked || sessionUnlocked;
     const card = document.createElement('div');
-    card.className = 'stage-card' + (stage.is_unlocked ? '' : ' locked');
+    card.className = 'stage-card' + (unlocked ? '' : ' locked');
 
     const iconSrc = STAGE_ICONS[stage.order_num] || STAGE_ICONS[1];
     const hint = STAGE_HINTS[stage.order_num];
@@ -436,7 +452,7 @@ function renderStageList(stages) {
         <div class="stage-req">必要EXP: ${stage.required_experience}</div>
       </div>
       <button class="stage-hint-btn" type="button">ヒント</button>
-      <div class="stage-arrow">${stage.is_unlocked ? '▶' : '🔒'}</div>
+      <div class="stage-arrow">${unlocked ? '▶' : '🔒'}</div>
     `;
 
     // ヒントはロック中でも見られる（Lv2のように「前のステージで直す」課題があるため）
@@ -450,7 +466,7 @@ function renderStageList(stages) {
       hintBtn.style.display = 'none';
     }
 
-    if (stage.is_unlocked) {
+    if (unlocked) {
       card.onclick = () => startBattle(stage);
     }
     container.appendChild(card);
@@ -635,6 +651,9 @@ async function clearStage() {
       method: 'POST',
     });
 
+    // セッション内EXPを加算（Lv2未修正でもこのセッション中は次のステージへ進める）
+    sessionExp += result.experience_gained;
+
     setDialog(`${result.message} EXP +${result.experience_gained}`);
     await sleep(1500);
 
@@ -695,8 +714,8 @@ function showResultScreen(isWin, clearResult) {
       detail.innerHTML += `
         <div class="exp-warning">
           🐛 <strong>バグ発見！</strong> 画面ではEXPが増えたのに、サーバー（DB）には保存されていない。<br>
-          リロードするとEXPは元に戻り、次のステージも解放されない。<br>
-          → これが <strong>Lv2</strong> の課題。pkg/server/handler/stage.go の ClearStage を修正して、もう一度このステージをクリアしよう
+          このまま先へ進めるが、<strong>リロードすると進捗がすべて消えてしまう</strong>。<br>
+          → これが <strong>Lv2</strong> の課題。pkg/server/handler/stage.go の ClearStage を修正しよう
         </div>
       `;
     }
