@@ -119,6 +119,7 @@ e.Start(":8080")  … サーバー起動
 | PUT | `/hero/name` | 名前更新 | — |
 | PUT | `/hero/experience` | 経験値更新 | — |
 | PUT | `/hero/hp` | HP更新 | **Lv3**（ルート追加） |
+| POST | `/hero/revive` | GameOver後の全回復（変更不要） | 補助API |
 | GET | `/stages` | ステージ一覧（解放状況付き） | — |
 | GET | `/stages/:id/enemies` | ステージの敵一覧 | — |
 | POST | `/stages/:id/clear` | ステージクリア（EXP付与） | **Lv2**, **Lv14** |

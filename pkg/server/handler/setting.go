@@ -13,6 +13,7 @@ func RegisterRoutes(e *echo.Echo, hero *HeroHandler, stage *StageHandler, battle
 	// [Lv3 バグ仕込み箇所]
 	// ここにHP更新のルートを追加してください。
 	// api.PUT("/hero/hp", hero.UpdateHP)
+	api.POST("/hero/revive", hero.Revive) // GameOver後の全回復（変更不要）
 
 	// ステージ
 	api.GET("/stages", stage.GetStages)

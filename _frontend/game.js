@@ -674,14 +674,14 @@ async function handleHeroDied() {
 
   showResultScreen(false, null);
 
-  // DB上のHPが最大値を下回っている場合は全回復させる
-  // （Lv3修正前は回復APIが未登録なので、失敗しても気にしない）
-  if (hero && hero.hp < hero.max_hp) {
-    try {
-      await apiFetch('/hero/hp', { method: 'PUT', body: JSON.stringify({ hp: hero.max_hp }) });
-    } catch (e) {
-      // Lv3未修正の間は回復できないが、バトル開始時にDBのHPから復帰するので問題ない
-    }
+  // HPを最大値まで全回復させる（専用の蘇生API。Lv3の修正状況に関係なく動く）
+  try {
+    await apiFetch('/hero/revive', { method: 'POST' });
+    hero = await apiFetch('/hero');
+    updateCharCard(hero);
+    heroHP = hero.hp;
+  } catch (e) {
+    // 回復に失敗しても進行は続行する
   }
 
   // GAME OVER を少し見せてからステージ選択に自動で戻る

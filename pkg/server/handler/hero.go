@@ -56,6 +56,23 @@ func (h *HeroHandler) UpdateExperience(c echo.Context) error {
 	return c.JSON(http.StatusOK, map[string]string{"message": "経験値を更新しました"})
 }
 
+// Revive はゲームオーバー後にヒーローのHPを最大値まで全回復する。
+// GameOver演出から呼ばれる補助API（変更不要）。Lv3の PUT /hero/hp とは別物。
+// POST /api/hero/revive
+func (h *HeroHandler) Revive(c echo.Context) error {
+	hero, err := h.repo.Get()
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	if err := h.repo.UpdateHP(hero.MaxHP); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": err.Error()})
+	}
+	return c.JSON(http.StatusOK, map[string]interface{}{
+		"message": "ヒーローは立ち上がった！HPが全回復した！",
+		"hp":      hero.MaxHP,
+	})
+}
+
 // UpdateHP はヒーローの現在HPを更新する。
 // PUT /api/hero/hp
 //
