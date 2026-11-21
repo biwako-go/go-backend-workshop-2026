@@ -1,6 +1,6 @@
 GOBIN := $(shell go env GOPATH)/bin
 
-.PHONY: setup up down reset reset-db start dev-test test race bench
+.PHONY: setup up down reset reset-db start dev-test debug test race bench
 
 # air のインストール（初回のみ）
 setup:
@@ -37,6 +37,14 @@ start:
 # 配布状態チェック: 全Lvのバグが想定通りに壊れているか検証する（講師向け・要DB起動）
 dev-test:
 	bash scripts/dev-test.sh
+
+# 開発者向け: 指定したLvまでクリアしたことにする（要パスフレーズ・要DB起動。サーバーは不要）
+#   make debug         → Lv42 まで（全クリア）
+#   make debug LV=20   → Lv20 まで
+#   make debug LV=0    → 未クリアに戻す
+LV ?= 42
+debug:
+	@go run ./cmd/debug -lv $(LV)
 
 # テスト実行
 test:

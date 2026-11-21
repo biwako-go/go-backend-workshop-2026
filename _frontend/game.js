@@ -531,6 +531,7 @@ async function loadHeroAndStages() {
 
     await loadChallengeEnemies();
     const stages = await apiFetch('/stages');
+    lastStages = stages;
     renderStageList(stages);
   } catch (e) {
     console.error('[loadHeroAndStages]', e);
@@ -741,6 +742,149 @@ function renderCatchupList() {
     container.appendChild(makeSectionHeader(`Go ${ver}`, 'catchup-version-header'));
     group.forEach(item => container.appendChild(makeChallengeCard(item, true, isCatchupCleared(item), '')));
   });
+}
+
+// ============================================================
+// 開発者向けデバッグモード（/?debug のときだけパネルを表示する）
+// ============================================================
+// 指定したLvまで「クリアしたことにする」ための動作確認用。参加者向けの機能ではない。
+// パスフレーズは平文で置かず、PBKDF2(SHA-256) で導いた鍵の AES-GCM 暗号文だけを
+// debug-secret.json に持つ（make debug の cmd/debug も同じファイルを読む）。
+// 復号できた = パスフレーズが正しい。パスフレーズは講師・開発者に確認すること。
+const DEBUG_UNLOCK_KEY = 'gopher-slayer:debug-config'; // 解錠済みの設定（このタブの間だけ保持）
+let debugConfig = null; // 復号した設定。null = 未解錠
+let lastStages = [];    // 最後に取得したステージ一覧（Lv1〜5 の必要EXPを引くため）
+
+function b64ToBytes(s) {
+  return Uint8Array.from(atob(s), c => c.charCodeAt(0));
+}
+
+// パスフレーズで debug-secret.json の暗号文を復号する。間違っていれば null
+async function decryptDebugSecret(pass) {
+  try {
+    const secret = await (await fetch('/debug-secret.json')).json();
+    const subtle = crypto.subtle;
+    const base = await subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+    const key = await subtle.deriveKey(
+      { name: 'PBKDF2', salt: b64ToBytes(secret.salt), iterations: secret.iterations, hash: 'SHA-256' },
+      base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+    const plain = await subtle.decrypt(
+      { name: 'AES-GCM', iv: b64ToBytes(secret.iv) }, key, b64ToBytes(secret.data));
+    const config = JSON.parse(new TextDecoder().decode(plain));
+    return config.magic === 'gopher-slayer-debug' ? config : null;
+  } catch (e) {
+    return null; // 鍵が違うと AES-GCM の認証で失敗する
+  }
+}
+
+// ?debug が付いていればパネルを出す。このタブで解錠済みなら操作部分も出す
+function initDebugMode() {
+  const panel = document.getElementById('debug-panel');
+  if (!panel) return;
+  let saved = null;
+  try {
+    saved = JSON.parse(sessionStorage.getItem(DEBUG_UNLOCK_KEY) || 'null');
+  } catch (e) {
+    // sessionStorage が使えなければ毎回解錠する
+  }
+  if (!new URLSearchParams(location.search).has('debug') && !saved) return;
+  panel.hidden = false;
+  if (saved) {
+    debugConfig = saved;
+    showDebugControls();
+  }
+}
+
+async function unlockDebugMode(event) {
+  event.preventDefault();
+  const input = document.getElementById('debug-pass');
+  setDebugMsg('解錠中……');
+  const config = await decryptDebugSecret(input.value);
+  input.value = '';
+  if (!config) {
+    setDebugMsg('パスフレーズが違います');
+    return;
+  }
+  debugConfig = config;
+  try {
+    sessionStorage.setItem(DEBUG_UNLOCK_KEY, JSON.stringify(config));
+  } catch (e) {
+    // 保存できなくてもこのページの間は使える
+  }
+  showDebugControls();
+  setDebugMsg('解錠しました');
+}
+
+function lockDebugMode() {
+  debugConfig = null;
+  try {
+    sessionStorage.removeItem(DEBUG_UNLOCK_KEY);
+  } catch (e) {
+    // 何もしない
+  }
+  document.getElementById('debug-panel').hidden = true;
+  history.replaceState(null, '', location.pathname);
+}
+
+function showDebugControls() {
+  document.getElementById('debug-lock').hidden = true;
+  document.getElementById('debug-controls').hidden = false;
+  const select = document.getElementById('debug-level');
+  if (select.options.length === 0) {
+    select.add(new Option('Lv0（未クリアに戻す）', '0'));
+    for (let n = 1; n <= 42; n++) select.add(new Option(`Lv${n}`, String(n)));
+    select.value = '42';
+  }
+}
+
+function setDebugMsg(text) {
+  document.getElementById('debug-msg').textContent = text;
+}
+
+// 「LvN までクリア済み」に必要なEXP（= LvN+1 の解放EXP。Lv42 は撃破後のEXP）
+function debugExpForClearedThrough(n) {
+  if (n <= 0) return 0;
+  const challenge = lv => ADVANCED_CHALLENGES.find(item => item.lv === `Lv${lv}`);
+  if (n <= 4) {
+    const next = lastStages.find(st => st.order_num === n + 1);
+    if (!next) throw new Error(`Lv${n + 1} のステージがDBにありません`);
+    return next.required_experience;
+  }
+  if (n === 5) {
+    const lv6 = challenge(6);
+    if (!lv6 || !lv6.db) throw new Error('Lv6 の敵がDBにありません');
+    return lv6.db.unlock_exp;
+  }
+  const item = challenge(n);
+  if (!item || !item.db) throw new Error(`Lv${n} の敵がDBにありません`);
+  return item.db.unlock_exp + 100;
+}
+
+// 選んだLvまでクリアしたことにする（EXPをDBに保存する。PUT /api/hero/experience）
+async function debugClearThrough() {
+  if (!debugConfig) return;
+  const n = parseInt(document.getElementById('debug-level').value, 10);
+  try {
+    const target = debugExpForClearedThrough(n);
+    await apiFetch('/hero/experience', {
+      method: 'PUT',
+      body: JSON.stringify({ experience: target }),
+    });
+    sessionExp = target; // 戻す場合もあるので max ではなく上書きする
+    await goToStageSelect();
+    setDebugMsg(n === 0 ? 'EXPを0に戻しました' : `Lv${n} までクリア済みにしました（EXP ${target}）`);
+  } catch (e) {
+    setDebugMsg('失敗しました: ' + e.message);
+  }
+}
+
+// キャッチアップの全レベルをクリア済みにする / クリア記録を消す（localStorage）
+function debugSetCatchupClears(clearAll) {
+  if (!debugConfig) return;
+  catchupClears = clearAll ? catchupItems().map(item => item.lv) : [];
+  saveCatchupState();
+  goToStageSelect();
+  setDebugMsg(clearAll ? 'キャッチアップを全クリア済みにしました' : 'キャッチアップのクリア記録を消しました');
 }
 
 // ============================================================
@@ -2338,6 +2482,7 @@ document.addEventListener('mouseup', () => {
 // Init
 // ============================================================
 window.onload = () => {
+  initDebugMode();    // /?debug のときだけ開発者向けデバッグパネルを出す
   loadCatchupState(); // 本編 / 最新Goキャッチアップ のどちらで始めるか
   goToStageSelect();
 };
