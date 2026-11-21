@@ -748,14 +748,9 @@ function renderCatchupList() {
 // 開発者向けデバッグモード（/?debug のときだけパネルを表示する）
 // ============================================================
 // 指定したLvまで「クリアしたことにする」ための動作確認用。参加者向けの機能ではない。
-// パスフレーズは平文で置かず、PBKDF2(SHA-256) で導いた鍵の AES-GCM 暗号文だけを持つ。
+// パスフレーズは平文で置かず、PBKDF2(SHA-256) で導いた鍵の AES-GCM 暗号文だけを
+// debug-secret.json に持つ（make debug の cmd/debug も同じファイルを読む）。
 // 復号できた = パスフレーズが正しい。パスフレーズは講師・開発者に確認すること。
-const DEBUG_SECRET = {
-  iterations: 310000,
-  salt: 'sFg2vqN/DQRfBqs4ubLh7A==',
-  iv: '72jzqH6jbSPDnOaw',
-  data: '02GaK0jMARSXugabGaN3Sd4PwApcPqSp4D2QUjOm38AUvj3Wn+CYBz3EK1JKY2tVbA/VLy5KACuB3r3nzHg0JUaJ',
-};
 const DEBUG_UNLOCK_KEY = 'gopher-slayer:debug-config'; // 解錠済みの設定（このタブの間だけ保持）
 let debugConfig = null; // 復号した設定。null = 未解錠
 let lastStages = [];    // 最後に取得したステージ一覧（Lv1〜5 の必要EXPを引くため）
@@ -764,16 +759,17 @@ function b64ToBytes(s) {
   return Uint8Array.from(atob(s), c => c.charCodeAt(0));
 }
 
-// パスフレーズで DEBUG_SECRET を復号する。間違っていれば null
+// パスフレーズで debug-secret.json の暗号文を復号する。間違っていれば null
 async function decryptDebugSecret(pass) {
   try {
+    const secret = await (await fetch('/debug-secret.json')).json();
     const subtle = crypto.subtle;
     const base = await subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
     const key = await subtle.deriveKey(
-      { name: 'PBKDF2', salt: b64ToBytes(DEBUG_SECRET.salt), iterations: DEBUG_SECRET.iterations, hash: 'SHA-256' },
+      { name: 'PBKDF2', salt: b64ToBytes(secret.salt), iterations: secret.iterations, hash: 'SHA-256' },
       base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
     const plain = await subtle.decrypt(
-      { name: 'AES-GCM', iv: b64ToBytes(DEBUG_SECRET.iv) }, key, b64ToBytes(DEBUG_SECRET.data));
+      { name: 'AES-GCM', iv: b64ToBytes(secret.iv) }, key, b64ToBytes(secret.data));
     const config = JSON.parse(new TextDecoder().decode(plain));
     return config.magic === 'gopher-slayer-debug' ? config : null;
   } catch (e) {

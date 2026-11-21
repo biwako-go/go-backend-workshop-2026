@@ -14,7 +14,7 @@ GoでHTTP APIを作る体験を、ゲームのバグ修正というかたちで�
 - レベルはLv1〜Lv42の一本道。Lv6の敵は全ステージクリア（EXP500）で出現し、チャレンジの敵を倒すと **EXP+100**（フロントが `PUT /api/hero/experience` で付与）され次の敵が解放される
 - **全レベルが「敵のHPを削って倒す」ゲームUIでクリア判定できる**（Lv1〜5はステージバトル、Lv6〜42はチャレンジの敵とのバトル：カードクリックでエンカウント→**「たたかう」ボタンが判定トリガー**→成功＝攻撃が通ってHP0、失敗＝敵の反撃演出。失敗後はその場で再度たたかえる）。チャレンジの敵（名前/HP/解放EXP）はDBの `challenge_enemies` にあり `GET /api/challenges` で取得、スプライトは `_frontend/images/gopher-enemies/` のみ使用
 - **最新Goキャッチアップモード**：ステージ選択画面のボタン（または `/?mode=catchup`）で、Go 1.25〜1.27 の新機能のレベル（Lv31〜Lv42 のうち12レベル）だけを EXP に関係なく挑戦できる。クリアしても EXP は増やさず（本編の進行を壊さないため）、クリア状況はブラウザの localStorage に記録する。対象は `_frontend/game.js` の `ADVANCED_CHALLENGES` の `go`（そのレベルで学ぶ機能のGoバージョン）と `CATCHUP_VERSIONS` で決まる
-- **開発者向けデバッグモード**：`/?debug` でパネルを出し、パスフレーズで解錠すると任意のLvまでクリア済みにできる（動作確認用）。パスフレーズは平文でリポジトリに置かず、`_frontend/game.js` の `DEBUG_SECRET` に AES-GCM（PBKDF2-SHA256 で鍵導出）の暗号文だけを置く。パスフレーズや中身を変えるときは暗号文を作り直す
+- **開発者向けデバッグモード**：`/?debug` でパネルを出し、パスフレーズで解錠すると任意のLvまでクリア済みにできる（動作確認用）。`make debug [LV=N]`（`cmd/debug/main.go`、EXP を直接DBに書く）でも同じことができる。パスフレーズは平文でリポジトリに置かず、`_frontend/debug-secret.json` に AES-GCM（PBKDF2-SHA256 で鍵導出）の暗号文だけを置き、画面とコマンドの両方がこれを読む。パスフレーズや中身を変えるときは暗号文を作り直す
 - UIに馴染まない開発体験系のトピック（Graceful Shutdown、slog、context伝播等）はレベルにせず CHALLENGES.md（発展課題）に置く
 
 ## アーキテクチャの方針
@@ -41,7 +41,8 @@ handler → service → repository → DB
 .
 ├── api-document.yaml          # API仕様（OpenAPI）
 ├── cmd/
-│   └── main.go                # エントリポイント
+│   ├── main.go                # エントリポイント
+│   └── debug/main.go          # 開発者向け make debug（指定Lvまでクリア済みにする）
 ├── db/
 │   └── init/
 │       ├── 1_ddl.sql          # テーブル定義
