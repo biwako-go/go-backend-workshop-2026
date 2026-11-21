@@ -39,7 +39,7 @@ func (h *StageHandler) GetStages(c echo.Context) error {
 	return c.JSON(http.StatusOK, stages)
 }
 
-// GetChallenges はチャレンジ（Lv6〜Lv28）の敵一覧を返す。このハンドラーは変更しなくてよい。
+// GetChallenges はチャレンジ（Lv6〜Lv42）の敵一覧を返す。このハンドラーは変更しなくてよい。
 // GET /api/challenges
 func (h *StageHandler) GetChallenges(c echo.Context) error {
 	enemies, err := h.enemyRepo.GetChallenges()

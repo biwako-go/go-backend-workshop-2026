@@ -31,7 +31,7 @@ INSERT INTO enemies (stage_id, name, hp, max_hp, attack, experience_reward) VALU
 -- Lv3 のタスク: ボスが強いため PUT /api/hero/hp で HP を上げる必要がある
 (5, 'ボスドラゴン',     300, 300, 50,   200);
 
--- チャレンジ（Lv6〜Lv28）で対決する敵
+-- チャレンジ（Lv6〜Lv42）で対決する敵
 -- unlock_exp: このEXPに達するとカードが解放される。倒すと +100 され次の敵が解放される
 INSERT INTO challenge_enemies (action, name, hp, max_hp, attack, unlock_exp) VALUES
 ('scout',     'ステルスGopher',        55,  55, 13,  500),
@@ -56,4 +56,21 @@ INSERT INTO challenge_enemies (action, name, hp, max_hp, attack, unlock_exp) VAL
 ('curse',     '呪いの爆弾魔',         140, 140, 44, 2400),
 ('report',    '記録係のゴブリン',     100, 100, 12, 2500),
 ('decode',    '古文書の精霊',         125, 125, 22, 2600),
-('prophecy',  '予言者',               200, 200, 50, 2700);
+('prophecy',  '予言者',               200, 200, 50, 2700),
+-- Lv29〜Lv33: 最新のGo（Go 1.23〜1.27 の新機能を1バージョン1体で）
+('march',     '骸骨王の軍勢',         160, 160, 36, 2800),
+('library',   '禁書泥棒のGopher',     150, 150, 32, 2900),
+('reinforce', '魔王軍の包囲網',       220, 220, 46, 3000),
+('barrier',   '結界術師Gopher',       180, 180, 40, 3100),
+('forgery',   '偽造師Gopher',         250, 250, 55, 3200),
+-- Lv34〜Lv36: 最新のGo 2周目（Go 1.26〜1.27）
+('appraise',  'ものまねミミック',     200, 200, 42, 3300),
+('roster',    'なりすましGopher',     230, 230, 48, 3400),
+('pigeon',    '待ちぼうけの亡霊',     280, 280, 60, 3500),
+-- Lv37〜Lv42: 最新のGo 3周目（Go 1.25〜1.27 を2体ずつ）
+('oldmap',    '地図喰いGopher',       260, 260, 52, 3600),
+('treasury',  '偽りの使者',           240, 240, 50, 3700),
+('fortress',  '天空の砦の門番',       270, 270, 56, 3800),
+('chronicle', '言いがかりの監査官',   250, 250, 54, 3900),
+('decree',    '偽りの大臣Gopher',     280, 280, 58, 4000),
+('satchel',   '袋に紛れた爆弾Gopher', 320, 320, 66, 4100);

@@ -64,6 +64,11 @@
       <!-- Center: Stage List -->
       <div class="stage-list-panel">
         <div class="panel-title">ステージ選択</div>
+        <!-- モード切り替え: 本編 / 最新Goキャッチアップ（Go 1.25〜1.27 のレベルだけを選んで挑戦） -->
+        <div class="mode-switch">
+          <button class="mode-btn active" id="mode-story-btn" type="button" onclick="setCatchupMode(false)">本編（Lv1〜Lv42）</button>
+          <button class="mode-btn" id="mode-catchup-btn" type="button" onclick="setCatchupMode(true)">⚡ 最新Goキャッチアップ（Go 1.25〜1.27）</button>
+        </div>
         <!-- 古文書の言い伝え（Lv27: 表示が毎回遅いのが症状） -->
         <div class="legend-line" id="legend-line">古文書を解読中……</div>
         <div class="stage-list" id="stage-list">

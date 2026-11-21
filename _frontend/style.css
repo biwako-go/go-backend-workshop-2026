@@ -325,6 +325,76 @@ html, body {
   border: 1px solid #f0d080;
 }
 
+/* ---- モード切り替え（本編 / 最新Goキャッチアップ） ---- */
+.mode-switch {
+  display: flex;
+  gap: 6px;
+}
+
+.mode-btn {
+  flex: 1;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: bold;
+  color: #5a3e1b;
+  background: rgba(255, 250, 230, 0.88);
+  border: 2px solid #a0824a;
+  border-radius: 3px;
+  padding: 5px 8px;
+  cursor: pointer;
+}
+
+.mode-btn:hover {
+  background: #f5e6b4;
+}
+
+.mode-btn.active {
+  color: #f0d080;
+  background: rgba(50, 30, 10, 0.85);
+  border-color: #f0d080;
+  cursor: default;
+}
+
+/* チャレンジカードの「Go 1.2x」バッジ（そのレベルで学ぶ新機能のバージョン） */
+.go-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  font-size: 9px;
+  letter-spacing: 0;
+  color: #fff;
+  background: #007d9c;
+  border-radius: 2px;
+}
+
+/* キャッチアップモードの見出しと説明 */
+.catchup-section-header {
+  background: rgba(0, 85, 110, 0.85);
+  color: #c8f4ff;
+  border: 1px solid #7fd8ee;
+}
+
+.catchup-version-header {
+  background: rgba(0, 125, 156, 0.75);
+  color: #fff;
+  border: 1px solid #7fd8ee;
+}
+
+.catchup-note {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #2a1a00;
+  background: rgba(255, 250, 230, 0.88);
+  border: 1px dashed #a0824a;
+  border-radius: 3px;
+  padding: 6px 10px;
+}
+
+.catchup-warn {
+  color: #7a2020;
+  border-color: #c06040;
+}
+
 .task-section-header {
   background: rgba(20, 55, 80, 0.8);
   color: #80d4f0;

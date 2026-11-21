@@ -220,13 +220,152 @@ const ADVANCED_CHALLENGES = [
   },
   {
     lv: 'Lv28',
+    go: '1.22', // このレベルで学ぶ新機能が入ったGoのバージョン（キャッチアップモードの対象判定にも使う）
     title: '予言者に打ち勝て',
     hint: '症状: 予言者に会心の一撃の行方をすべて予知されてしまう（乱数が予測可能＝チート可能）。\npkg/server/service/battle.go の RollCritical が古い math/rand を固定シードで使っている。\nGo 1.22 の math/rand/v2 に移行しよう（criticalRNG 変数を消して rand.IntN(4) == 0 と書くだけ）。',
     action: 'prophecy',
     condition: '予言者に会心の行方を <strong>読まれない</strong> こと（12回の会心予知と勝負）',
     img: '/images/gopher-enemies/gopher-ice.png',
   },
+  // ---- Lv29〜Lv33: 最新のGo（Go 1.23〜1.27 の新機能を1バージョン1レベルで）----
+  {
+    lv: 'Lv29',
+    go: '1.23',
+    title: '骸骨兵の行進を止めろ',
+    hint: '症状: 骸骨王を倒して break したのに行進が止まらず、サーバーで panic が起きる。\npkg/server/service/march.go の SkeletonMarch（Go 1.23 の range-over-func イテレータ）が yield の戻り値を無視している。\nyield が false を返す＝呼び出し側が break した合図。if !yield(s) { return } で行進を止めよう。',
+    action: 'march',
+    condition: '骸骨王を倒したら行進が <strong>ぴたりと止まる</strong> こと（panicしない）',
+    img: '/images/gopher-enemies/gopher-zombie.png',
+  },
+  {
+    lv: 'Lv30',
+    go: '1.24',
+    title: '禁書庫を守り抜け',
+    hint: '症状: 禁書泥棒のGopherに「../forbidden/禁呪の書.txt」や書庫内の「抜け道」経由で禁書を持ち出される（パストラバーサル）。\npkg/server/service/library.go の LendScroll が、利用者の指定した名前をそのまま filepath.Join して読んでいる。\nGo 1.24 の os.OpenRoot で書庫を開き、root.ReadFile（Go 1.25〜）で読もう。名前の文字列チェックだけでは「抜け道」（シンボリックリンク）は防げない。',
+    action: 'library',
+    condition: '書庫の巻物は貸し出し、<strong>禁書は1冊も持ち出させない</strong> こと',
+    img: '/images/gopher-enemies/gopher-ghost.png',
+  },
+  {
+    lv: 'Lv31',
+    go: '1.25',
+    title: '援軍を揃えて出陣せよ',
+    hint: '症状: 援軍10部隊の到着を待ってから出陣するはずが、ほとんどの出陣で援軍を置き去りにしている（たまに揃う回があるのが厄介）。\npkg/server/service/reinforce.go — wg.Add(1) を goroutine の中で呼んでいるため、wg.Wait() が先に終わってしまう。\nまず go vet ./... で指摘を確認し、Go 1.25 の wg.Go(func() { ... }) で書き直そう。',
+    action: 'reinforce',
+    condition: '10回の出陣すべてで <strong>援軍10部隊の到着を待つ</strong> こと',
+    img: '/images/gopher-enemies/gopher-demon.png',
+  },
+  {
+    lv: 'Lv32',
+    go: '1.26',
+    title: '結界の弱点を見抜け',
+    hint: '症状: 結界に弾かれたエラーに弱点が書いてあるのに読み取れず、3層とも破れない。\npkg/server/service/barrier.go の BreakBarriers — err.(*BarrierError) の型アサーションは、fmt.Errorf の %w で包まれたエラーには効かない。\nGo 1.26 の errors.AsType[*BarrierError](err) で、包みの中から取り出そう。',
+    action: 'barrier',
+    condition: '3層の結界すべての <strong>弱点を見抜いて</strong> 破ること',
+    img: '/images/gopher-enemies/gopher-ice.png',
+  },
+  {
+    lv: 'Lv33',
+    go: '1.27',
+    title: '偽造された請求書を見破れ',
+    hint: '症状: 報酬100Gの依頼なのに、偽造師Gopherの請求書を読むと 99999G 支払ってしまう。\npkg/server/service/forgery.go の ReadRewardClaim — encoding/json（v1）はキーの大文字・小文字を区別せず（"REWARD" も reward として読む）、重複したキーは後勝ちで上書きする。\nGo 1.27 で正式に入った encoding/json/v2 に import を変えよう（json.Unmarshal の呼び方はそのまま）。',
+    action: 'forgery',
+    condition: '正規の請求書には100Gを支払い、<strong>偽造された請求書には騙されない</strong> こと',
+    img: '/images/gopher-enemies/gopher-psycho.png',
+  },
+  // ---- Lv34〜Lv36: 最新のGo 2周目（Go 1.26〜1.27）----
+  {
+    lv: 'Lv34',
+    go: '1.26',
+    title: 'ものまねミミックの鑑定書を正せ',
+    hint: '症状: 鑑定書のボーナスが、どの宝も「賢者の石」と同じ100になっている（ものまねミミックの仕業）。\npkg/server/service/appraise.go の AppraiseTreasures — ループの外で1つだけ宣言した変数 bonus のアドレス（&bonus）を全部の宝に渡しているので、どの宝も同じ変数を指している。\nGo 1.26 から new に式を渡せる。Bonus: new(t.value * 2) で、宝ごとに別の変数を作ろう。',
+    action: 'appraise',
+    condition: '宝ごとのボーナスが <strong>基本価値の2倍</strong> になっていること（呪いの指輪はボーナスなし）',
+    img: '/images/gopher-enemies/gopher-magma.png',
+  },
+  {
+    lv: 'Lv35',
+    go: '1.27',
+    title: 'なりすましGopherを締め出せ',
+    hint: '症状: 冒険者100人を続けて登録すると登録番号がほとんど重複していて、なりすましGopherに他人の番号を名乗られる。\npkg/server/service/roster.go の IssueAdventurerID が、登録した時刻（ミリ秒）をそのまま番号にしている。\nGo 1.27 で標準ライブラリに入った uuid パッケージの uuid.NewV7() を使おう（v7 は発行順に並ぶ。uuid.New() の v4 は順番がバラバラ）。',
+    action: 'roster',
+    condition: '100人の登録番号が <strong>重複せず、登録順に並ぶ</strong> こと',
+    img: '/images/gopher-enemies/gopher-demon.png',
+  },
+  {
+    lv: 'Lv36',
+    go: '1.27',
+    title: '置き去りの伝書鳩を救え',
+    hint: '症状: 伝書鳩を飛ばすたびに、間に合わなかった鳩が誰もいない野営地で永遠に待ちぼうけになる（goroutineリーク）。\nGo 1.27 で標準になった goroutineleak プロファイルで、止まっている場所を確かめよう:\ncurl http://localhost:8080/api/debug/goroutineleak\npkg/server/service/pigeon.go の SendPigeons — 返事を受け取る channel にバッファがないので、受け取り手がいないと送信で止まる。',
+    action: 'pigeon',
+    condition: '100msで出発しても、<strong>待ちぼうけの鳩（goroutineリーク）を残さない</strong> こと',
+    img: '/images/gopher-enemies/gopher-ghost.png',
+  },
+  // ---- Lv37〜Lv42: 最新のGo 3周目（Go 1.25〜1.27 を2レベルずつ）----
+  {
+    lv: 'Lv37',
+    go: '1.25',
+    title: '地図喰いGopherの罠を見抜け',
+    hint: '症状: 地図喰いGopherに食べられて存在しない地図を開こうとすると、サーバーで panic が起きる（nil pointer dereference）。\npkg/server/service/oldmap.go の ReadTreasureMap — os.Open の err を確かめる前に、ファイル f を使っている（f.Name()）。\nGo 1.24 までは、たまたま動いているように見えることがあったが、Go 1.25 でコンパイラのバグが直り、正しく panic するようになった。err を先に確かめよう。',
+    action: 'oldmap',
+    condition: '存在しない地図を開いても <strong>panic せずにエラーで知らせる</strong> こと',
+    img: '/images/gopher-enemies/gopher-zombie.png',
+  },
+  {
+    lv: 'Lv38',
+    go: '1.25',
+    title: '偽りの使者の送金を止めろ',
+    hint: '症状: 偽りの使者のサイトに仕込まれたフォームから、ギルドの金庫の送金が実行されてしまう（CSRF）。\npkg/server/service/treasury.go の NewTreasuryHandler — どこのサイトから来たリクエストでも送金している。\nGo 1.25 の http.NewCrossOriginProtection() でハンドラーを包むと、別サイトからの POST を 403 で拒否できる（ブラウザ以外からのリクエストは通る）。',
+    action: 'treasury',
+    condition: '<strong>別サイトからの送金だけを拒否</strong> し、正しい送金は通すこと',
+    img: '/images/gopher-enemies/gopher-psycho.png',
+  },
+  {
+    lv: 'Lv39',
+    go: '1.26',
+    title: '天空の砦へ伝令を届けろ',
+    hint: '症状: IPv6 アドレスの「天空の砦」宛ての URL だけが壊れていて、伝令が出発できない（Go 1.26 に上げたら動かなくなった）。\npkg/server/service/fortress.go の FortressStatusURL — ホストとポートを ":" でつないでいるので、IPv6 だと "http://2001:db8::10:8443/status" になる。\nGo 1.26 から net/url は角かっこなしのコロン入りホストをエラーにする。net.JoinHostPort で "[2001:db8::10]:8443" の形にしよう。',
+    action: 'fortress',
+    condition: '3つの砦すべてに <strong>正しく読める URL</strong> で伝令を送ること',
+    img: '/images/gopher-enemies/gopher-ice.png',
+  },
+  {
+    lv: 'Lv40',
+    go: '1.26',
+    title: '監査官の言いがかりを封じろ',
+    hint: '症状: ギルドの監査記録に「討伐」の記録が1件もなく、言いがかりの監査官に「討伐していない」と言われてしまう。\npkg/server/service/chronicle.go の RecordBattle — 掲示板用と監査用の logger に毎回両方書いているが、討伐だけ監査用に書き忘れている。\nGo 1.26 の slog.NewMultiHandler で、1つの logger から両方のハンドラーへ同時に書き出そう。',
+    action: 'chronicle',
+    condition: '掲示板と監査記録の <strong>両方に討伐の記録が3件ずつ</strong> 残ること',
+    img: '/images/gopher-enemies/gopher-demon.png',
+  },
+  {
+    lv: 'Lv41',
+    go: '1.27',
+    title: '本物の勅書を見抜け',
+    hint: '症状: 本文に「--」を含む王の勅書が、署名を読み違えて偽物と判定されてしまう（偽りの大臣の思うつぼ）。\npkg/server/service/decree.go の ReadDecree — strings.Cut は「最初の」区切りで切る。署名は最後の「--」の後ろにある。\nGo 1.27 で追加された strings.CutLast を使おう。',
+    action: 'decree',
+    condition: '本物の勅書は <strong>本文と署名を正しく読み取り</strong>、偽物は退けること',
+    img: '/images/gopher-enemies/gopher-ghost.png',
+  },
+  {
+    lv: 'Lv42',
+    go: '1.27',
+    title: '道具袋の爆弾を見分けろ',
+    hint: '症状: 道具袋から回復薬を飲もうとすると、袋に紛れた爆弾を回復薬と決め打ちして panic する（interface conversion）。\npkg/server/service/satchel.go — Take が any を返すので、使う側が .(Potion) と型アサーションしている。\nGo 1.27 からメソッドにも型パラメータを付けられる。Take を func (s *Satchel) Take[T any](name string) (T, bool) にして、s.Take[Potion](name) で取り出そう。',
+    action: 'satchel',
+    condition: '回復薬だけを飲んで <strong>合計180回復</strong> し、爆弾は飲まないこと',
+    img: '/images/gopher-enemies/gopher-magma.png',
+  },
 ];
+
+// ---- 最新Goキャッチアップ（Go 1.25〜1.27 の新機能のレベルだけを選んで挑戦するモード）----
+// 本編のEXPに関係なく挑戦でき、クリアしてもEXPは増えない（本編の進行を壊さないため）。
+// クリア状況はブラウザ（localStorage）に記録する。対象は ADVANCED_CHALLENGES の go で決まる。
+const CATCHUP_VERSIONS = ['1.25', '1.26', '1.27'];
+const MODE_STORAGE_KEY = 'gopher-slayer:mode';
+const CATCHUP_CLEARS_STORAGE_KEY = 'gopher-slayer:catchup-clears';
+let catchupMode = false; // true: キャッチアップモード / false: 本編
+let catchupClears = [];  // キャッチアップでクリアしたLv（例: 'Lv31'）
 
 // ---- Help hints per stage ----
 const STAGE_HINTS = {
@@ -421,6 +560,11 @@ function makeSectionHeader(label, cssClass) {
 }
 
 function renderStageList(stages) {
+  updateModeButtons();
+  if (catchupMode) {
+    renderCatchupList();
+    return;
+  }
   const container = document.getElementById('stage-list');
   container.innerHTML = '';
 
@@ -480,27 +624,122 @@ function renderStageList(stages) {
     if (!item.db) return; // DBから敵情報を取得できていない場合は表示しない
     const unlocked = hero && hero.experience >= item.db.unlock_exp;
     const beaten = hero && hero.experience >= item.db.unlock_exp + 100; // 撃破済み
-    const card = document.createElement('div');
-    card.className = 'stage-card' + (unlocked ? '' : ' locked');
-    card.innerHTML = `
-      <img class="stage-icon" src="${item.img}" alt="" />
-      <div class="stage-info">
-        <div class="stage-lv">${item.lv}</div>
-        <div class="stage-name">${item.title}</div>
-        <div class="stage-req">${item.db.name}（HP ${item.db.max_hp}）／必要EXP: ${item.db.unlock_exp}</div>
-      </div>
-      <button class="stage-hint-btn" type="button">ヒント</button>
-      <div class="stage-arrow">${beaten ? '⭐' : (unlocked ? '▶' : '🔒')}</div>
-    `;
-    // ヒントはロック中でも見られる
-    card.querySelector('.stage-hint-btn').onclick = (e) => {
-      e.stopPropagation();
-      showAdvancedHint(item);
-    };
-    if (unlocked) {
-      card.onclick = () => runChallenge(item);
+    container.appendChild(makeChallengeCard(item, unlocked, beaten, `必要EXP: ${item.db.unlock_exp}`));
+  });
+}
+
+// チャレンジのカードを作る（本編・キャッチアップ共通）
+function makeChallengeCard(item, unlocked, beaten, reqText) {
+  const card = document.createElement('div');
+  card.className = 'stage-card' + (unlocked ? '' : ' locked');
+  const goBadge = item.go ? `<span class="go-badge">Go ${item.go}</span>` : '';
+  card.innerHTML = `
+    <img class="stage-icon" src="${item.img}" alt="" />
+    <div class="stage-info">
+      <div class="stage-lv">${item.lv}${goBadge}</div>
+      <div class="stage-name">${item.title}</div>
+      <div class="stage-req">${item.db.name}（HP ${item.db.max_hp}）${reqText ? '／' + reqText : ''}</div>
+    </div>
+    <button class="stage-hint-btn" type="button">ヒント</button>
+    <div class="stage-arrow">${beaten ? '⭐' : (unlocked ? '▶' : '🔒')}</div>
+  `;
+  // ヒントはロック中でも見られる
+  card.querySelector('.stage-hint-btn').onclick = (e) => {
+    e.stopPropagation();
+    showAdvancedHint(item);
+  };
+  if (unlocked) {
+    card.onclick = () => runChallenge(item);
+  }
+  return card;
+}
+
+// ============================================================
+// 最新Goキャッチアップ（Go 1.25〜1.27 のレベルだけを選んで挑戦するモード）
+// ============================================================
+
+// URLパラメータ（?mode=catchup / ?mode=story）と localStorage から、モードとクリア状況を読み込む
+function loadCatchupState() {
+  const requested = new URLSearchParams(location.search).get('mode');
+  try {
+    if (requested === 'catchup' || requested === 'story') {
+      localStorage.setItem(MODE_STORAGE_KEY, requested);
+      history.replaceState(null, '', location.pathname); // 以降はボタンでの切り替えを優先する
     }
-    container.appendChild(card);
+    catchupMode = localStorage.getItem(MODE_STORAGE_KEY) === 'catchup';
+    const saved = JSON.parse(localStorage.getItem(CATCHUP_CLEARS_STORAGE_KEY) || '[]');
+    catchupClears = Array.isArray(saved) ? saved : [];
+  } catch (e) {
+    // localStorage が使えない環境では URL パラメータだけで決め、クリア状況はこのタブの間だけ持つ
+    catchupMode = requested === 'catchup';
+  }
+}
+
+function saveCatchupState() {
+  try {
+    localStorage.setItem(MODE_STORAGE_KEY, catchupMode ? 'catchup' : 'story');
+    localStorage.setItem(CATCHUP_CLEARS_STORAGE_KEY, JSON.stringify(catchupClears));
+  } catch (e) {
+    // 保存できなくてもゲームは続けられる
+  }
+}
+
+// モード切り替えボタン: on=true でキャッチアップ、false で本編
+function setCatchupMode(on) {
+  if (catchupMode === on) return;
+  catchupMode = on;
+  saveCatchupState();
+  goToStageSelect();
+}
+
+function updateModeButtons() {
+  const storyBtn = document.getElementById('mode-story-btn');
+  const catchupBtn = document.getElementById('mode-catchup-btn');
+  if (storyBtn) storyBtn.classList.toggle('active', !catchupMode);
+  if (catchupBtn) catchupBtn.classList.toggle('active', catchupMode);
+}
+
+// キャッチアップの対象レベル（Go 1.25〜1.27 の新機能）を、バージョン順・Lv順に返す
+function catchupItems() {
+  const lvNum = item => parseInt(item.lv.slice(2), 10);
+  return ADVANCED_CHALLENGES
+    .filter(item => CATCHUP_VERSIONS.includes(item.go))
+    .sort((a, b) => CATCHUP_VERSIONS.indexOf(a.go) - CATCHUP_VERSIONS.indexOf(b.go) || lvNum(a) - lvNum(b));
+}
+
+// キャッチアップでクリア済みか（本編で撃破済みのレベルもクリア扱い）
+function isCatchupCleared(item) {
+  if (catchupClears.includes(item.lv)) return true;
+  return !!(hero && item.db && hero.experience >= item.db.unlock_exp + 100);
+}
+
+function renderCatchupList() {
+  const container = document.getElementById('stage-list');
+  container.innerHTML = '';
+  container.appendChild(makeSectionHeader('最新Goキャッチアップ（Go 1.25〜1.27）', 'catchup-section-header'));
+
+  const items = catchupItems();
+  const available = items.filter(item => item.db); // DBに敵がいるレベルだけ挑戦できる
+  const cleared = available.filter(isCatchupCleared).length;
+  const note = document.createElement('div');
+  note.className = 'catchup-note';
+  note.innerHTML =
+    'Go 1.25〜1.27 の新機能を学べるレベルだけを、EXPに関係なく好きな順に挑戦できる。' +
+    'クリアしてもEXPは増えない（本編の進行には影響しない）。' +
+    `<strong>クリア ${cleared}/${available.length}</strong>`;
+  container.appendChild(note);
+  if (available.length < items.length) {
+    const warn = document.createElement('div');
+    warn.className = 'catchup-note catchup-warn';
+    warn.textContent = '一部のレベルの敵がDBにありません。make reset-db でDBを作り直してください（ゲームの進捗はリセットされます）。';
+    container.appendChild(warn);
+  }
+
+  CATCHUP_VERSIONS.forEach(ver => {
+    const group = available.filter(item => item.go === ver);
+    if (group.length === 0) return;
+    container.appendChild(makeSectionHeader(`Go ${ver}`, 'catchup-version-header'));
+    group.forEach(item => container.appendChild(makeChallengeCard(item, true, isCatchupCleared(item), '')));
   });
 }
 
@@ -796,6 +1035,20 @@ async function challengeAttack() {
     courier: tryCourierChallenge,
     assault: tryAssaultChallenge,
     familiar: tryFamiliarsChallenge,
+    march: tryMarchChallenge,
+    library: tryLibraryChallenge,
+    reinforce: tryReinforceChallenge,
+    barrier: tryBarrierChallenge,
+    forgery: tryForgeryChallenge,
+    appraise: tryAppraiseChallenge,
+    roster: tryRosterChallenge,
+    pigeon: tryPigeonChallenge,
+    oldmap: tryOldMapChallenge,
+    treasury: tryTreasuryChallenge,
+    fortress: tryFortressChallenge,
+    chronicle: tryChronicleChallenge,
+    decree: tryDecreeChallenge,
+    satchel: trySatchelChallenge,
   };
   const fn = actions[item.action];
   if (!fn) return;
@@ -889,9 +1142,16 @@ async function finishChallenge(message) {
       prefix = `${db.name} をたおした！ `;
     }
     setTimeout(() => sprite.classList.add('defeated'), 500); // HPが削れてから倒れる
-    // 初回撃破ならEXP+100（次のチャレンジが解放される）。
-    // 付与がDBに保存されたのを確認してから表示する（Lv2と同じ「表示と保存のズレ」を作らないため）
-    if (db && hero && hero.experience < db.unlock_exp + 100) {
+    if (catchupMode) {
+      // キャッチアップモード: EXPは増やさず、クリアだけを記録する（本編の進行を壊さないため）
+      if (currentChallengeItem && !catchupClears.includes(currentChallengeItem.lv)) {
+        catchupClears.push(currentChallengeItem.lv);
+        saveCatchupState();
+      }
+      prefix += 'クリアを記録した！ ';
+    } else if (db && hero && hero.experience < db.unlock_exp + 100) {
+      // 初回撃破ならEXP+100（次のチャレンジが解放される）。
+      // 付与がDBに保存されたのを確認してから表示する（Lv2と同じ「表示と保存のズレ」を作らないため）
       const awarded = await awardChallengeExp(currentChallengeItem);
       prefix += awarded ? 'EXP +100！ ' : '⚠️ EXPの付与に失敗（もう一度たたかうと再付与される） ';
     }
@@ -913,7 +1173,17 @@ function showChallengeResult(db) {
   const title = document.getElementById('result-title');
   title.textContent = 'チャレンジクリア！';
   title.className = 'result-title win';
-  const allCleared = hero && hero.experience >= 2800; // Lv28撃破でEXP2800
+  if (catchupMode) {
+    const available = catchupItems().filter(item => item.db);
+    const cleared = available.filter(isCatchupCleared).length;
+    document.getElementById('result-detail').innerHTML = `
+      <strong>${db.name}</strong> を討伐した！<br>
+      キャッチアップ: <strong>${cleared}/${available.length}</strong> クリア<br>
+      ${cleared >= available.length ? 'Go 1.25〜1.27 キャッチアップ完了！おめでとう！🎉' : '次はどの新機能に挑戦する？'}
+    `;
+    return;
+  }
+  const allCleared = hero && hero.experience >= 4200; // Lv42撃破でEXP4200
   document.getElementById('result-detail').innerHTML = `
     <strong>${db.name}</strong> を討伐した！<br>
     合計EXP: <strong>${hero ? hero.experience : '-'}</strong><br>
@@ -1518,6 +1788,408 @@ async function tryFamiliarsChallenge(item) {
   }
 }
 
+// ---- Lv29: 骸骨兵の行進（range-over-func イテレータ / Go 1.23）----
+async function tryMarchChallenge(item) {
+  const listEl = resetChallengeList();
+  const defeatRow = addChallengeRow(listEl, '骸骨王までの迎撃', '迎撃中...');
+  const stopRow = addChallengeRow(listEl, '王を倒したら行進が止まる', '確認中...');
+  try {
+    const result = await apiFetch('/battle/march', { method: 'POST' });
+    if (result.ok) {
+      setChallengeRow(defeatRow, 'done', `${result.defeated.length}体 撃破`);
+      setChallengeRow(stopRow, 'done', '止まった！');
+      finishChallenge(`骸骨王が倒れ、行進はぴたりと止まった！残党は崩れ去った！（${result.defeated.join('→')}）`);
+    } else if (result.panic) {
+      // break のあとも yield を呼び続けて panic した（判定ハンドラーが panic の中身を返してくれる）
+      setChallengeRow(defeatRow, 'done', '骸骨王 撃破');
+      setChallengeRow(stopRow, 'failed', 'panic!');
+      finishChallenge(
+        `骸骨王を倒して break したのに、行進が止まらない！（panic: ${result.panic}）pkg/server/service/march.go の SkeletonMarch — yield が false を返したら return して行進を止めよう。`
+      );
+    } else {
+      const n = (result.defeated || []).length;
+      setChallengeRow(defeatRow, 'failed', `${n}体 撃破`);
+      setChallengeRow(stopRow, 'failed', '止まらない');
+      finishChallenge(
+        `骸骨王のところで行進が止まっていない…（${n}体と戦った）。pkg/server/service/march.go の SkeletonMarch を直そう（RepelSkeletonMarch は変更しなくてよい）。`
+      );
+    }
+  } catch (e) {
+    setChallengeRow(defeatRow, 'failed', 'エラー');
+    setChallengeRow(stopRow, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv30: 禁書庫の番（os.Root / Go 1.24）----
+const LIBRARY_REQUESTS = ['薬草の図鑑.txt', '../forbidden/禁呪の書.txt', '抜け道/禁呪の書.txt'];
+
+async function tryLibraryChallenge(item) {
+  const listEl = resetChallengeList();
+  const rows = {};
+  LIBRARY_REQUESTS.forEach(name => { rows[name] = addChallengeRow(listEl, name, '審査中...'); });
+  try {
+    const result = await apiFetch('/battle/library', { method: 'POST' });
+    LIBRARY_REQUESTS.forEach(name => {
+      const r = result.requests.find(req => req.name === name);
+      if (!r) {
+        // シンボリックリンクを作れない環境では「抜け道」の検査は省かれる
+        setChallengeRow(rows[name], null, '検査省略');
+      } else if (r.forbidden) {
+        setChallengeRow(rows[name], r.ok ? 'done' : 'failed', r.ok ? '断った' : '盗まれた');
+      } else {
+        setChallengeRow(rows[name], r.ok ? 'done' : 'failed', r.ok ? '貸した' : '読めない');
+      }
+    });
+    if (result.ok) {
+      finishChallenge('禁書泥棒の小細工はすべて見破った！書庫の外へは一歩も出られない！');
+    } else if (result.requests.some(r => r.forbidden && !r.ok)) {
+      finishChallenge(
+        '禁書『禁呪の書』を書庫の外から持ち出された！pkg/server/service/library.go の LendScroll — 名前をそのまま filepath.Join すると「..」や抜け道（シンボリックリンク）で外に出られる。Go 1.24 の os.OpenRoot で書庫の外に出られないようにしよう。'
+      );
+    } else {
+      finishChallenge('禁書は守れたが、書庫の巻物まで貸し出せなくなっている…。「薬草の図鑑.txt」はちゃんと読めるようにしよう。');
+    }
+  } catch (e) {
+    Object.values(rows).forEach(r => setChallengeRow(r, 'failed', 'エラー'));
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv31: 援軍の点呼（sync.WaitGroup.Go / Go 1.25）----
+async function tryReinforceChallenge(item) {
+  const listEl = resetChallengeList();
+  const fullRow = addChallengeRow(listEl, '援軍が揃った出陣', '出陣中...');
+  const arrivalRow = addChallengeRow(listEl, '各出陣の到着部隊', '点呼中...');
+  try {
+    const result = await apiFetch('/battle/reinforce', { method: 'POST' });
+    const arrivals = result.arrivals.join(' ');
+    if (result.ok) {
+      setChallengeRow(fullRow, 'done', `${result.full}/${result.sorties}回`);
+      setChallengeRow(arrivalRow, 'done', arrivals);
+      finishChallenge('援軍10部隊が毎回そろってから出陣！魔王軍の包囲網を打ち破った！');
+    } else {
+      setChallengeRow(fullRow, 'failed', `${result.full}/${result.sorties}回`);
+      setChallengeRow(arrivalRow, 'failed', arrivals);
+      finishChallenge(
+        `援軍を置き去りにして出陣してしまった！（各出陣の到着部隊: ${arrivals}）たまに揃う回があるのが並行処理のバグの厄介なところ。go vet ./... の指摘を確認し、pkg/server/service/reinforce.go を Go 1.25 の wg.Go で書き直そう。`
+      );
+    }
+  } catch (e) {
+    setChallengeRow(fullRow, 'failed', 'エラー');
+    setChallengeRow(arrivalRow, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv32: 結界の弱点（errors.AsType / Go 1.26）----
+const BARRIER_NAMES = ['氷の結界', '炎の結界', '闇の結界'];
+
+async function tryBarrierChallenge(item) {
+  const listEl = resetChallengeList();
+  const rows = BARRIER_NAMES.map(name => addChallengeRow(listEl, name, '詠唱中...'));
+  try {
+    const result = await apiFetch('/battle/barrier', { method: 'POST' });
+    result.results.forEach((r, i) => {
+      if (!rows[i]) return;
+      if (r.broken) {
+        setChallengeRow(rows[i], 'done', `弱点「${r.weakness}」で粉砕！`);
+      } else {
+        setChallengeRow(rows[i], 'failed', r.weakness ? `「${r.weakness}」でも弾かれた` : '弱点が読めない');
+      }
+    });
+    if (result.ok) {
+      finishChallenge('エラーの包みを開いて弱点を見抜いた！3層の結界をすべて打ち砕いた！');
+    } else {
+      finishChallenge(
+        '弾かれたエラーに弱点が書いてあるのに、読み取れない…！pkg/server/service/barrier.go の BreakBarriers — err.(*BarrierError) は %w で包まれたエラーには効かない。Go 1.26 の errors.AsType で包みの中から取り出そう。'
+      );
+    }
+  } catch (e) {
+    rows.forEach(r => setChallengeRow(r, 'failed', 'エラー'));
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv33: 偽造された請求書（encoding/json/v2 / Go 1.27）----
+const FORGERY_LABELS = ['正規の請求書', '大文字キーの偽造', '重複キーの偽造'];
+
+async function tryForgeryChallenge(item) {
+  const listEl = resetChallengeList();
+  const rows = FORGERY_LABELS.map(label => addChallengeRow(listEl, label, '審査中...'));
+  try {
+    const result = await apiFetch('/battle/forgery', { method: 'POST' });
+    result.reviews.forEach((r, i) => {
+      if (!rows[i]) return;
+      setChallengeRow(rows[i], r.ok ? 'done' : 'failed', r.rejected ? '受付拒否' : `${r.paid}G 支払い`);
+    });
+    const fooled = result.reviews.filter(r => r.forged && !r.ok);
+    if (result.ok) {
+      finishChallenge('偽造の手口をすべて見破った！支払ったのは正規の報酬100Gだけだ！');
+    } else if (fooled.length > 0) {
+      const paid = Math.max(...fooled.map(r => r.paid));
+      finishChallenge(
+        `報酬100Gの依頼なのに ${paid}G も支払ってしまった！encoding/json（v1）はキーの大文字・小文字を区別せず、重複したキーは後勝ちで上書きする。pkg/server/service/forgery.go の import を Go 1.27 の encoding/json/v2 に変えよう。`
+      );
+    } else {
+      finishChallenge('偽造は見破れたが、正規の請求書まで受け付けなくなっている…。正しい請求書には100Gを支払おう。');
+    }
+  } catch (e) {
+    rows.forEach(r => setChallengeRow(r, 'failed', 'エラー'));
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv34: ものまねミミックの鑑定書（new(式) / Go 1.26）----
+const APPRAISE_TREASURES = ['古びた剣', '呪いの指輪', '竜のうろこ', '賢者の石'];
+
+async function tryAppraiseChallenge(item) {
+  const listEl = resetChallengeList();
+  const rows = {};
+  APPRAISE_TREASURES.forEach(name => { rows[name] = addChallengeRow(listEl, name, '鑑定中...'); });
+  try {
+    const result = await apiFetch('/battle/appraise', { method: 'POST' });
+    const bonusText = b => (b === null || b === undefined) ? 'ボーナスなし' : `ボーナス ${b}`;
+    result.treasures.forEach(t => {
+      if (rows[t.name]) setChallengeRow(rows[t.name], t.ok ? 'done' : 'failed', bonusText(t.bonus));
+    });
+    if (result.ok) {
+      finishChallenge('宝ごとに正しいボーナスが付いた！ものまねミミックの化けの皮がはがれた！');
+    } else {
+      finishChallenge(
+        'どの宝のボーナスも同じ値をものまねしている…！pkg/server/service/appraise.go の AppraiseTreasures — 全部の宝が同じ変数 bonus を指している。Go 1.26 の new(式) で、宝ごとに別の変数を作ろう。'
+      );
+    }
+  } catch (e) {
+    Object.values(rows).forEach(r => setChallengeRow(r, 'failed', 'エラー'));
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv35: なりすましGopher（uuid / Go 1.27）----
+async function tryRosterChallenge(item) {
+  const listEl = resetChallengeList();
+  const dupRow = addChallengeRow(listEl, '登録番号の重複', '登録中...');
+  const orderRow = addChallengeRow(listEl, '登録順に並ぶ', '確認中...');
+  try {
+    const result = await apiFetch('/battle/roster', { method: 'POST' });
+    setChallengeRow(dupRow, result.duplicates === 0 ? 'done' : 'failed', `${result.duplicates}/${result.total}人`);
+    setChallengeRow(orderRow, result.ordered ? 'done' : 'failed', result.ordered ? '並んでいる' : 'バラバラ');
+    const sample = (result.samples || []).join(' / ');
+    if (result.ok) {
+      finishChallenge(`登録番号はすべて別々で、登録順に並んでいる！なりすましGopherは締め出された！（例: ${result.samples[0]}）`);
+    } else if (result.duplicates > 0) {
+      finishChallenge(
+        `100人中 ${result.duplicates}人の登録番号が他の冒険者とかぶっている…（例: ${sample}）pkg/server/service/roster.go — 時刻（ミリ秒）だけの番号は、同じミリ秒の登録で重複する。Go 1.27 の uuid.NewV7() を使おう。`
+      );
+    } else {
+      finishChallenge(
+        `重複はなくなったが、登録番号が登録順に並んでいない（例: ${sample}）。uuid.New() の v4 は完全なランダム。先頭に時刻が入る uuid.NewV7() を使おう。`
+      );
+    }
+  } catch (e) {
+    setChallengeRow(dupRow, 'failed', 'エラー');
+    setChallengeRow(orderRow, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv36: 置き去りの伝書鳩（goroutineleak プロファイル / Go 1.27）----
+async function tryPigeonChallenge(item) {
+  const listEl = resetChallengeList();
+  const replyRow = addChallengeRow(listEl, '間に合った返事', '待機中...');
+  const departRow = addChallengeRow(listEl, '出発までの時間', '計測中...');
+  const leakRow = addChallengeRow(listEl, '待ちぼうけの鳩', '検出中...');
+  try {
+    const result = await apiFetch('/battle/pigeons', { method: 'POST' });
+    const quick = result.elapsed_ms < 200;
+    setChallengeRow(replyRow, 'done', `${(result.replies || []).length}/${result.towers}羽`);
+    setChallengeRow(departRow, quick ? 'done' : 'failed', `${result.elapsed_ms}ms`);
+    setChallengeRow(leakRow, result.leaked === 0 ? 'done' : 'failed', `${result.leaked}羽`);
+    if (result.ok) {
+      finishChallenge('遅れて戻った鳩も、返事を置いて帰っていった！待ちぼうけの亡霊は消え去った！');
+    } else if (!quick) {
+      finishChallenge(
+        `出発が遅すぎる（${result.elapsed_ms}ms）。全部の鳩を待つのではなく、100msで出発したまま、遅れた鳩が返事を置いて帰れるようにしよう。`
+      );
+    } else {
+      const where = result.where ? `${result.where} で` : '';
+      finishChallenge(
+        `${result.leaked}羽の鳩が返事を渡せずに永遠に待ちぼうけ…！Go 1.27 の goroutineleak プロファイルが、${where}止まったままの goroutine を見つけた。pkg/server/service/pigeon.go の SendPigeons — 受け取り手がいなくても返事を置いて帰れるようにしよう。`
+      );
+    }
+  } catch (e) {
+    [replyRow, departRow, leakRow].forEach(r => setChallengeRow(r, 'failed', 'エラー'));
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv37: 地図喰いGopher（err を確かめる前に結果を使う / Go 1.25 の nil チェック修正）----
+async function tryOldMapChallenge(item) {
+  const listEl = resetChallengeList();
+  const caveRow = addChallengeRow(listEl, '東の洞窟の地図', '解読中...');
+  const ruinRow = addChallengeRow(listEl, '西の遺跡の地図（消失）', '解読中...');
+  try {
+    const result = await apiFetch('/battle/oldmap', { method: 'POST' });
+    const cave = result.reads.find(r => r.exists);
+    const ruin = result.reads.find(r => !r.exists);
+    setChallengeRow(caveRow, cave && cave.ok ? 'done' : 'failed', cave && cave.ok ? '読めた' : '読めない');
+    const ruinStatus = ruin && ruin.panic ? 'panic!' : (ruin && ruin.ok ? 'エラーで報告' : '異常');
+    setChallengeRow(ruinRow, ruin && ruin.ok ? 'done' : 'failed', ruinStatus);
+    if (result.ok) {
+      finishChallenge('失われた地図は、エラーで正しく知らされた！地図喰いGopherの罠を見抜いた！');
+    } else if (ruin && ruin.panic) {
+      finishChallenge(
+        `存在しない地図を開いたとたんに panic！（${ruin.panic}）pkg/server/service/oldmap.go の ReadTreasureMap — err を確かめる前に f を使っている。Go 1.25 からこの書き方は正しく panic する。os.Open の直後に err を確かめよう。`
+      );
+    } else {
+      finishChallenge('地図の読み取りがおかしい…。存在する地図は読めて、存在しない地図はエラーになるようにしよう。');
+    }
+  } catch (e) {
+    setChallengeRow(caveRow, 'failed', 'エラー');
+    setChallengeRow(ruinRow, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv38: 偽りの使者（http.CrossOriginProtection / Go 1.25）----
+const TREASURY_ATTEMPTS = ['ギルドの窓口から', '偽りの使者のサイトから', 'ブラウザ以外の道具から'];
+
+async function tryTreasuryChallenge(item) {
+  const listEl = resetChallengeList();
+  const rows = TREASURY_ATTEMPTS.map(label => addChallengeRow(listEl, label, '送金中...'));
+  try {
+    const result = await apiFetch('/battle/treasury', { method: 'POST' });
+    result.attempts.forEach((a, i) => {
+      if (!rows[i]) return;
+      const status = a.allow ? (a.sent ? '送金した' : '止められた') : (a.sent ? '送金された！' : '拒否した');
+      setChallengeRow(rows[i], a.ok ? 'done' : 'failed', status);
+    });
+    const csrf = result.attempts.find(a => !a.allow);
+    if (result.ok) {
+      finishChallenge('別サイトからの送金だけを門前払いにした！偽りの使者のたくらみは失敗した！');
+    } else if (csrf && csrf.sent) {
+      finishChallenge(
+        `偽りの使者のサイトから送金されてしまった！（金庫の残高 ${result.gold}G）pkg/server/service/treasury.go の NewTreasuryHandler — Go 1.25 の http.NewCrossOriginProtection() でハンドラーを包もう。`
+      );
+    } else {
+      finishChallenge('偽りの使者は止めたが、正しい送金まで止めてしまっている…。別サイトからの送金だけを拒否しよう。');
+    }
+  } catch (e) {
+    rows.forEach(r => setChallengeRow(r, 'failed', 'エラー'));
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv39: 天空の砦（net/url の厳しくなったホスト検査 / Go 1.26）----
+const FORTRESS_NAMES = ['王都の砦', '東の砦', '天空の砦（IPv6）'];
+
+async function tryFortressChallenge(item) {
+  const listEl = resetChallengeList();
+  const rows = FORTRESS_NAMES.map(name => addChallengeRow(listEl, name, '伝令準備中...'));
+  try {
+    const result = await apiFetch('/battle/fortress', { method: 'POST' });
+    result.dispatches.forEach((d, i) => {
+      if (!rows[i]) return;
+      setChallengeRow(rows[i], d.ok ? 'done' : 'failed', d.ok ? '届いた' : (d.error ? 'URLが壊れている' : '宛先違い'));
+    });
+    const broken = result.dispatches.find(d => !d.ok);
+    if (result.ok) {
+      finishChallenge('IPv6 の天空の砦にも伝令が届いた！アドレスは角かっこで正しく囲まれている！');
+    } else {
+      finishChallenge(
+        `${broken.name}への伝令の URL が読めない！（${broken.url}）Go 1.26 から net/url は、角かっこで囲まれていないコロン入りのホストをエラーにする。pkg/server/service/fortress.go の FortressStatusURL で net.JoinHostPort を使おう。`
+      );
+    }
+  } catch (e) {
+    rows.forEach(r => setChallengeRow(r, 'failed', 'エラー'));
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv40: 監査官の言いがかり（slog.NewMultiHandler / Go 1.26）----
+async function tryChronicleChallenge(item) {
+  const listEl = resetChallengeList();
+  const boardRow = addChallengeRow(listEl, '掲示板（テキスト）', '記録中...');
+  const auditRow = addChallengeRow(listEl, '監査記録（JSON）', '記録中...');
+  try {
+    const result = await apiFetch('/battle/chronicle', { method: 'POST' });
+    const boardOK = result.board_kills === result.want;
+    const auditOK = result.audit_kills === result.want && result.audit_broken === 0;
+    setChallengeRow(boardRow, boardOK ? 'done' : 'failed', `討伐 ${result.board_kills}/${result.want}件`);
+    setChallengeRow(auditRow, auditOK ? 'done' : 'failed', `討伐 ${result.audit_kills}/${result.want}件`);
+    if (result.ok) {
+      finishChallenge('掲示板にも監査記録にも、討伐がもれなく残った！監査官は何も言えずに引き下がった！');
+    } else if (!auditOK) {
+      finishChallenge(
+        `監査記録に討伐の記録が ${result.audit_kills}件しかない！「討伐していないのでは？」と言いがかりをつけられた…。pkg/server/service/chronicle.go の RecordBattle — Go 1.26 の slog.NewMultiHandler で、1つの logger から両方へ書き出そう。`
+      );
+    } else {
+      finishChallenge(`監査記録はそろったが、掲示板の討伐の記録が ${result.board_kills}件しかない。両方に同じ記録を残そう。`);
+    }
+  } catch (e) {
+    setChallengeRow(boardRow, 'failed', 'エラー');
+    setChallengeRow(auditRow, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv41: 本物の勅書（strings.CutLast / Go 1.27）----
+async function tryDecreeChallenge(item) {
+  const listEl = resetChallengeList();
+  const rows = ['勅書その1', '勅書その2', '勅書その3'].map(label => addChallengeRow(listEl, label, '鑑定中...'));
+  try {
+    const result = await apiFetch('/battle/decree', { method: 'POST' });
+    result.checks.forEach((ch, i) => {
+      if (!rows[i]) return;
+      const status = ch.genuine ? (ch.ok ? '本物と確認' : '偽物と誤判定') : (ch.ok ? '偽物を退けた' : '偽物を受理！');
+      setChallengeRow(rows[i], ch.ok ? 'done' : 'failed', status);
+    });
+    const wrong = result.checks.find(ch => !ch.ok);
+    if (result.ok) {
+      finishChallenge('本物の勅書はすべて受け入れ、偽物は見抜いた！偽りの大臣のたくらみは崩れ去った！');
+    } else if (wrong.genuine) {
+      finishChallenge(
+        `本物の王の勅書「${wrong.decree}」の署名を「${wrong.signer}」と読み違えた！pkg/server/service/decree.go の ReadDecree — strings.Cut は最初の「--」で切る。Go 1.27 の strings.CutLast で、最後の「--」で切ろう。`
+      );
+    } else {
+      finishChallenge(`偽物の勅書を受け入れてしまった…（${wrong.decree}）。署名が「ゴーファー王」の勅書だけを受け入れよう。`);
+    }
+  } catch (e) {
+    rows.forEach(r => setChallengeRow(r, 'failed', 'エラー'));
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
+// ---- Lv42: 道具袋の爆弾（ジェネリックメソッド / Go 1.27）----
+async function trySatchelChallenge(item) {
+  const listEl = resetChallengeList();
+  const healRow = addChallengeRow(listEl, '回復薬だけ飲む', '確認中...');
+  const bombRow = addChallengeRow(listEl, '爆弾は飲まない', '確認中...');
+  try {
+    const result = await apiFetch('/battle/satchel', { method: 'POST' });
+    if (result.ok) {
+      setChallengeRow(healRow, 'done', `${result.healed} 回復`);
+      setChallengeRow(bombRow, 'done', 'よけた');
+      finishChallenge('回復薬だけを選んで飲み、爆弾には手を出さなかった！爆弾Gopherは不発に終わった！');
+    } else if (result.panic) {
+      setChallengeRow(healRow, 'failed', '中断');
+      setChallengeRow(bombRow, 'failed', '爆発！');
+      finishChallenge(
+        `袋の中の爆弾を回復薬だと決め打ちして panic！（${result.panic}）pkg/server/service/satchel.go — Go 1.27 のジェネリックメソッドで Take[T any](name string) (T, bool) にして、s.Take[Potion](name) で安全に取り出そう。`
+      );
+    } else {
+      setChallengeRow(healRow, 'failed', `${result.healed} 回復`);
+      setChallengeRow(bombRow, 'done', 'よけた');
+      finishChallenge(`回復量が ${result.healed} になっている（正しくは ${result.want}）。袋の回復薬はすべて飲もう。`);
+    }
+  } catch (e) {
+    setChallengeRow(healRow, 'failed', 'エラー');
+    setChallengeRow(bombRow, 'failed', 'エラー');
+    finishChallenge(`エラー: ${e.message}`);
+  }
+}
+
 function showAdvancedHint(item) {
   openHintModal(item.lv, item.title, item.hint);
 }
@@ -1665,4 +2337,7 @@ document.addEventListener('mouseup', () => {
 // ============================================================
 // Init
 // ============================================================
-window.onload = () => goToStageSelect();
+window.onload = () => {
+  loadCatchupState(); // 本編 / 最新Goキャッチアップ のどちらで始めるか
+  goToStageSelect();
+};
