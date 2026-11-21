@@ -1,6 +1,6 @@
 # Gopher Slayer — Optional Challenges
 
-本編のワークショップタスク（Tasks.md の Lv1〜Lv17）をクリアしたら、以下の中から好きなものに挑戦しよう。
+本編のワークショップタスク（Tasks.md の Lv1〜Lv42）をクリアしたら、以下の中から好きなものに挑戦しよう。
 すべて任意。興味・レベルに合わせて自由に選んでください。
 
 難易度の目安：★ = 30分〜1時間 / ★★★ = 半日 / ★★★★★ = 1日以上
@@ -544,7 +544,7 @@ handler → service → repository の全関数に `ctx context.Context` を第1
 **難易度:** ★★★★
 **学べること:** `testing/synctest`（Go 1.25）, 仮想時間, goroutineリークの検出
 
-Lv11 の `InterruptCast`（2秒タイムアウト）のテストを synctest で書くと仮想時間で一瞬で終わる。unbuffered channel のままだと synctest が送信側goroutineのリークを deadlock として暴いてくれる。※ Go 1.25 が必要（go.mod の更新も）
+Lv18 の `InterruptCast`（2秒タイムアウト）のテストを synctest で書くと仮想時間で一瞬で終わる。unbuffered channel のままだと synctest が送信側goroutineのリークを deadlock として暴いてくれる。※ Go 1.25 以降の機能（go.mod は Go 1.27 なのでそのまま使える）
 
 ---
 

@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS enemies (
     FOREIGN KEY (stage_id) REFERENCES stages(id)
 );
 
--- チャレンジ（Lv6〜Lv28）で対決する敵
+-- チャレンジ（Lv6〜Lv42）で対決する敵
 -- action はフロントのチャレンジ種別と対応するキー
 CREATE TABLE IF NOT EXISTS challenge_enemies (
     id         INT AUTO_INCREMENT PRIMARY KEY,

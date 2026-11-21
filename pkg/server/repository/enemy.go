@@ -59,7 +59,7 @@ func (r *EnemyRepository) OpenConnections() int {
 	return r.db.Stats().OpenConnections
 }
 
-// GetChallenges はチャレンジ（Lv6〜Lv28）の敵一覧を解放EXP順に返す。
+// GetChallenges はチャレンジ（Lv6〜Lv42）の敵一覧を解放EXP順に返す。
 func (r *EnemyRepository) GetChallenges() ([]*service.ChallengeEnemy, error) {
 	rows, err := r.db.Query(`
 		SELECT id, action, name, hp, max_hp, attack, unlock_exp

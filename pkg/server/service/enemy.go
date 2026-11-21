@@ -10,7 +10,7 @@ type Enemy struct {
 	ExperienceReward int    `json:"experience_reward"`
 }
 
-// ChallengeEnemy はチャレンジ（Lv6〜Lv28）で対決する敵。
+// ChallengeEnemy はチャレンジ（Lv6〜Lv42）で対決する敵。
 // unlock_exp に達するとカードが解放され、倒すと EXP +100 で次の敵が解放される。
 type ChallengeEnemy struct {
 	ID        int    `json:"id"`

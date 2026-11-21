@@ -2,7 +2,7 @@
 # =============================================================
 # Gopher Slayer 配布状態チェック（make dev-test）
 #
-# 全Lv（1〜28）のバグが「想定通りの壊れ方」をしているかを検証する。
+# 全Lv（1〜42）のバグが「想定通りの壊れ方」をしているかを検証する。
 # 講師がワークショップ配布前に実行する想定。
 #   ✅ = バグが想定通りに再現している（配布OK）
 #   ❌ = 想定と違う（修正済みのコードが残っている等）
@@ -174,6 +174,62 @@ code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "$API/legend/speedread")
 match=$(curl -s -X POST "$API/battle/prophecy" | jget "['all_match']")
 [ "$match" = "True" ] && ok "Lv28 予言者に12回すべて的中される" || ng "Lv28 予言が外れた（all_match=$match、rand/v2化済み？）"
 
+# --- Lv29: 骸骨王を倒して break しても行進が止まらず panic（yield の戻り値を無視） ---
+body=$(curl -s -X POST "$API/battle/march")
+echo "$body" | grep -q '"panic"' && ok "Lv29 break 後も行進が止まらず panic する" || ng "Lv29 panic しない（yield の戻り値を確認済み？）"
+
+# --- Lv30: 書庫の外の禁書を持ち出される（パストラバーサル） ---
+okv=$(curl -s -X POST "$API/battle/library" | jget "['ok']")
+[ "$okv" = "False" ] && ok "Lv30 「..」や抜け道で禁書を持ち出される" || ng "Lv30 禁書が守られている（os.Root化済み？）"
+
+# --- Lv31: 援軍の到着を待たずに出陣する（wg.Add を goroutine の中で呼んでいる） ---
+okv=$(curl -s -X POST "$API/battle/reinforce" | jget "['ok']")
+[ "$okv" = "False" ] && ok "Lv31 援軍を置き去りにして出陣する" || ng "Lv31 毎回援軍が揃っている（wg.Go化済み？）"
+
+# --- Lv32: ラップされたエラーから弱点を読み取れない（型アサーション） ---
+okv=$(curl -s -X POST "$API/battle/barrier" | jget "['ok']")
+[ "$okv" = "False" ] && ok "Lv32 結界の弱点を読み取れない" || ng "Lv32 結界を破れている（errors.AsType化済み？）"
+
+# --- Lv33: 改ざんされた請求書に 99999G 支払う（encoding/json v1 のゆるさ） ---
+okv=$(curl -s -X POST "$API/battle/forgery" | jget "['ok']")
+[ "$okv" = "False" ] && ok "Lv33 偽造された請求書に騙される" || ng "Lv33 偽造を見破っている（json/v2化済み？）"
+
+# --- Lv34: 鑑定書のボーナスが全部同じ値になる（同じ変数のアドレスを使い回している） ---
+okv=$(curl -s -X POST "$API/battle/appraise" | jget "['ok']")
+[ "$okv" = "False" ] && ok "Lv34 どの宝のボーナスも同じ値になる" || ng "Lv34 ボーナスが正しい（new(式)化済み？）"
+
+# --- Lv35: 登録番号が重複する（時刻ミリ秒をIDにしている） ---
+dup=$(curl -s -X POST "$API/battle/roster" | jget "['duplicates']")
+[ "${dup:-0}" -gt 0 ] && ok "Lv35 登録番号が ${dup}件 重複する" || ng "Lv35 登録番号が重複しない（uuid化済み？）"
+
+# --- Lv36: 待ちぼうけの goroutine が漏れる（goroutineleak プロファイルで検出） ---
+leaked=$(curl -s -X POST "$API/battle/pigeons" | jget "['leaked']")
+[ "${leaked:-0}" -gt 0 ] && ok "Lv36 待ちぼうけの goroutine が ${leaked}個 漏れる" || ng "Lv36 goroutine が漏れない（バッファ化済み？）"
+
+# --- Lv37: 存在しない地図で panic（err を確かめる前に f を使っている） ---
+body=$(curl -s -X POST "$API/battle/oldmap")
+echo "$body" | grep -q '"panic":"runtime error' && ok "Lv37 存在しない地図で nil pointer の panic" || ng "Lv37 panic しない（err を先に確認済み？）"
+
+# --- Lv38: 別サイトからの送金が通る（CSRF） ---
+okv=$(curl -s -X POST "$API/battle/treasury" | jget "['ok']")
+[ "$okv" = "False" ] && ok "Lv38 別サイトからの送金（CSRF）が通る" || ng "Lv38 CSRF を防いでいる（CrossOriginProtection化済み？）"
+
+# --- Lv39: IPv6 の砦の URL が壊れている（Go 1.26 の net/url で読めない） ---
+okv=$(curl -s -X POST "$API/battle/fortress" | jget "['ok']")
+[ "$okv" = "False" ] && ok "Lv39 IPv6 の砦の URL が読めない" || ng "Lv39 URL が正しい（JoinHostPort化済み？）"
+
+# --- Lv40: 監査記録に討伐が残らない（logger の書き忘れ） ---
+kills=$(curl -s -X POST "$API/battle/chronicle" | jget "['audit_kills']")
+[ "${kills:-3}" -lt 3 ] && ok "Lv40 監査記録の討伐が ${kills}件しかない" || ng "Lv40 監査記録がそろっている（NewMultiHandler化済み？）"
+
+# --- Lv41: 本物の勅書を偽物と判定する（strings.Cut で最初の区切りを使っている） ---
+okv=$(curl -s -X POST "$API/battle/decree" | jget "['ok']")
+[ "$okv" = "False" ] && ok "Lv41 本物の勅書を偽物と判定する" || ng "Lv41 勅書を正しく読めている（CutLast化済み？）"
+
+# --- Lv42: 道具袋の爆弾で panic（any からの決め打ちの型アサーション） ---
+body=$(curl -s -X POST "$API/battle/satchel")
+echo "$body" | grep -q '"panic":"interface conversion' && ok "Lv42 爆弾を回復薬と決め打ちして panic" || ng "Lv42 panic しない（ジェネリックメソッド化済み？）"
+
 # --- Lv25: goroutine 内 panic でサーバーごと落ちる（最後に実行：テスト用サーバーが死ぬ） ---
 curl -s -o /dev/null -X POST "$API/battle/defuse"
 sleep 2
@@ -187,7 +243,7 @@ SRV_PID="" # すでに死んでいるので cleanup での kill は不要
 # --- 結果 ---
 echo "$results"
 echo "=================================================="
-echo "結果: ✅ $pass / ❌ $fail （全28項目）"
+echo "結果: ✅ $pass / ❌ $fail （全42項目）"
 if [ "$fail" -gt 0 ]; then
   echo "❌ の項目は「バグが仕込まれていない（修正済みのコードが残っている）」可能性があります。"
   exit 1

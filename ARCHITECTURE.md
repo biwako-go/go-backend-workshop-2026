@@ -89,7 +89,7 @@ sequenceDiagram
 ├── db/init/                   # テーブル定義(1_ddl.sql)・初期データ(2_dml.sql)
 ├── _frontend/                 # ゲーム画面（参加者は触らない）
 ├── api-document.yaml          # API仕様（OpenAPI）
-├── Tasks.md                   # ワークショップタスク（Lv1〜Lv28）
+├── Tasks.md                   # ワークショップタスク（Lv1〜Lv42）
 ├── ANSWER.md                  # 答え合わせ（講師向け）
 └── CHALLENGES.md              # 発展課題
 ```
@@ -124,7 +124,7 @@ e.Start(":8080")  … サーバー起動
 | GET | `/stages/:id/enemies` | ステージの敵一覧 | — |
 | POST | `/stages/:id/clear` | ステージクリア（EXP付与） | **Lv2**, **Lv14** |
 | POST | `/stages/5/challenge` | 封印解除チャレンジ | **Lv16** |
-| GET | `/challenges` | チャレンジの敵一覧（変更不要） | Lv6〜Lv28の共通基盤 |
+| GET | `/challenges` | チャレンジの敵一覧（変更不要） | Lv6〜Lv42の共通基盤 |
 | GET | `/legend` | 古文書の言い伝え | **Lv27** |
 | POST | `/legend/speedread` | 古文書の速読（判定用） | **Lv27** |
 | POST | `/battle/attack` | ヒーローの攻撃 | **Lv1**, **Lv4**, **Lv23**, **Lv28** |
@@ -147,8 +147,23 @@ e.Start(":8080")  … サーバー起動
 | GET | `/mock/guild` | 眠っている遠方のギルド（変更不要） | Lv20の相手役 |
 | POST | `/battle/assault` | 城門突撃の同時数検分（判定用） | **Lv21** |
 | POST | `/battle/familiars` | 使い魔の帰宅検分（判定用） | **Lv24** |
+| POST | `/battle/march` | 骸骨兵の行進の迎撃（判定用） | **Lv29** |
+| POST | `/battle/library` | 禁書庫の貸し出し審査（判定用） | **Lv30** |
+| POST | `/battle/reinforce` | 援軍の点呼を10回検分（判定用） | **Lv31** |
+| POST | `/battle/barrier` | 結界の弱点の見破り（判定用） | **Lv32** |
+| POST | `/battle/forgery` | 報酬請求書の審査（判定用） | **Lv33** |
+| POST | `/battle/appraise` | 宝の鑑定書の検分（判定用） | **Lv34** |
+| POST | `/battle/roster` | 冒険者100人の登録番号の検分（判定用） | **Lv35** |
+| POST | `/battle/pigeons` | 伝書鳩の待ちぼうけ（goroutineリーク）検分（判定用） | **Lv36** |
+| POST | `/battle/oldmap` | 宝の地図の読み取り（存在しない地図で panic しないか）（判定用） | **Lv37** |
+| POST | `/battle/treasury` | 金庫の窓口への送金リクエスト3通り（CSRF）（判定用） | **Lv38** |
+| POST | `/battle/fortress` | 砦への伝令の URL 検分（判定用） | **Lv39** |
+| POST | `/battle/chronicle` | 戦闘記録（掲示板と監査記録）の検分（判定用） | **Lv40** |
+| POST | `/battle/decree` | 王の勅書の署名の検分（判定用） | **Lv41** |
+| POST | `/battle/satchel` | 道具袋から回復薬だけを飲めるかの検分（判定用） | **Lv42** |
 | POST | `/quests/gather` | ギルド依頼の調査 | **Lv19** |
 | GET | `/debug/memory` | メモリ・goroutine観測（変更不要） | Lv22/Lv23の観測用 |
+| GET | `/debug/goroutineleak` | 漏れた goroutine のスタック（Go 1.27 の goroutineleak プロファイル。変更不要） | Lv36の観測用 |
 
 詳細なリクエスト/レスポンス形式は [api-document.yaml](api-document.yaml) を参照。
 
@@ -195,7 +210,7 @@ erDiagram
     stages ||--o{ enemies : "1ステージに複数の敵"
 ```
 
-- `challenge_enemies` は Lv6〜Lv28 のチャレンジで対決する敵。`unlock_exp` に達するとカードが解放され、倒すとフロントが `PUT /api/hero/experience` で EXP を +100 して次の敵が解放される
+- `challenge_enemies` は Lv6〜Lv42 のチャレンジで対決する敵。`unlock_exp` に達するとカードが解放され、倒すとフロントが `PUT /api/hero/experience` で EXP を +100 して次の敵が解放される
 
 - ヒーローは常に `id = 1` の1件だけ（ログイン機能はない）
 - ステージの解放判定は「ヒーローのEXP ≧ `required_experience`」をhandler側で計算している。チャレンジの解放判定は「EXP ≧ `unlock_exp`」をフロント側で計算している
@@ -207,17 +222,19 @@ erDiagram
 | ヒーローのステータス（EXP・最大HP等） | MySQL | リロードしても消えない |
 | バトル中のHP（ヒーロー・敵） | フロント（game.js のグローバル変数） | サーバーは計算結果を返すだけ |
 | サーバープロセス内の状態 | serviceのグローバル変数 | Lv17のカウンタ、Lv23の怨念、Lv27の解読結果など。**再起動で消える** |
+| 最新Goキャッチアップのモードとクリア状況 | ブラウザ（localStorage） | EXP には反映しない（本編の進行を壊さないため）。ブラウザごとに別々 |
 
 ## ワークショップ教材としての仕掛け
 
 - バグが仕込まれている箇所には必ず `[LvN バグ仕込み箇所]` というコメントがある（`grep -rn "バグ仕込み箇所" pkg cmd` で一覧できる）
-- `GET /api/debug/memory` と `GET /api/debug/db` は観測用の正しいコード。参加者は変更しない
+- `GET /api/debug/memory` と `GET /api/debug/goroutineleak` は観測用の正しいコード。参加者は変更しない
 - `make start` は [air](https://github.com/air-verse/air) によるホットリロード起動。ファイルを保存すると自動で再起動する（Lv25でサーバーが落ちても勝手に復活する）
-- Go 1.22 が必要（Lv28 の `math/rand/v2` のため）
+- Go 1.27 が必要（Lv29〜Lv42 で Go 1.23〜1.27 の新機能を使うため）。go.mod に書いてあるので、Go 1.21 以降が入っていれば必要なバージョンが自動でダウンロードされる
+- **最新Goキャッチアップモード**：ステージ選択画面のボタン（または `/?mode=catchup`）で、Go 1.25〜1.27 の新機能のレベル（Lv31〜Lv42 のうち12レベル）だけを EXP に関係なく挑戦できる。どのレベルが対象かは `_frontend/game.js` の `ADVANCED_CHALLENGES` の `go` と `CATCHUP_VERSIONS` で決まる
 
 ## 関連ドキュメント
 
 - [README.md](README.md) — 起動方法
-- [Tasks.md](Tasks.md) — ワークショップタスク（Lv1〜Lv28）
+- [Tasks.md](Tasks.md) — ワークショップタスク（Lv1〜Lv42）
 - [ANSWER.md](ANSWER.md) — 答え合わせ（講師向け）
 - [CHALLENGES.md](CHALLENGES.md) — 発展課題
