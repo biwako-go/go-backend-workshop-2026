@@ -355,6 +355,62 @@ html, body {
   cursor: default;
 }
 
+/* ---- 開発者向けデバッグモード（/?debug のときだけ表示） ---- */
+.debug-panel {
+  font-size: 11px;
+  color: #ffe8e8;
+  background: rgba(90, 20, 20, 0.88);
+  border: 2px dashed #f08080;
+  border-radius: 3px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.debug-panel[hidden],
+.debug-panel [hidden] {
+  display: none;
+}
+
+.debug-title {
+  font-weight: bold;
+}
+
+.debug-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  margin: 0;
+}
+
+.debug-row input,
+.debug-row select {
+  font-family: inherit;
+  font-size: 11px;
+  padding: 2px 4px;
+}
+
+.debug-btn {
+  font-family: inherit;
+  font-size: 11px;
+  color: #5a1010;
+  background: #ffe8e8;
+  border: 1px solid #f08080;
+  border-radius: 3px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.debug-btn:hover {
+  background: #ffd0d0;
+}
+
+.debug-msg:empty {
+  display: none;
+}
+
 /* チャレンジカードの「Go 1.2x」バッジ（そのレベルで学ぶ新機能のバージョン） */
 .go-badge {
   display: inline-block;

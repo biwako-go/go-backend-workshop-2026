@@ -69,6 +69,26 @@
           <button class="mode-btn active" id="mode-story-btn" type="button" onclick="setCatchupMode(false)">本編（Lv1〜Lv42）</button>
           <button class="mode-btn" id="mode-catchup-btn" type="button" onclick="setCatchupMode(true)">⚡ 最新Goキャッチアップ（Go 1.25〜1.27）</button>
         </div>
+        <!-- 開発者向けデバッグモード（/?debug のときだけ表示。パスフレーズで解錠） -->
+        <div class="debug-panel" id="debug-panel" hidden>
+          <div class="debug-title">🛠 デバッグモード（開発者向け）</div>
+          <form class="debug-row" id="debug-lock" onsubmit="unlockDebugMode(event)">
+            <input type="password" id="debug-pass" placeholder="パスフレーズ" autocomplete="off" />
+            <button type="submit" class="debug-btn">解錠</button>
+          </form>
+          <div id="debug-controls" hidden>
+            <div class="debug-row">
+              <select id="debug-level"></select>
+              <button type="button" class="debug-btn" onclick="debugClearThrough()">までクリア済みにする</button>
+            </div>
+            <div class="debug-row">
+              <button type="button" class="debug-btn" onclick="debugSetCatchupClears(true)">キャッチアップ全クリア</button>
+              <button type="button" class="debug-btn" onclick="debugSetCatchupClears(false)">キャッチアップのクリアを消す</button>
+              <button type="button" class="debug-btn" onclick="lockDebugMode()">終了</button>
+            </div>
+          </div>
+          <div class="debug-msg" id="debug-msg"></div>
+        </div>
         <!-- 古文書の言い伝え（Lv27: 表示が毎回遅いのが症状） -->
         <div class="legend-line" id="legend-line">古文書を解読中……</div>
         <div class="stage-list" id="stage-list">
