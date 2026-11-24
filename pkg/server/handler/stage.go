@@ -129,8 +129,9 @@ func (h *StageHandler) ClearStage(c echo.Context) error {
 	newExp := hero.Experience + expGained
 
 	// 4. 経験値をDBに保存する
-	// [Lv2 バグ仕込み箇所]
-	// ここにDBへの保存処理が抜けている
+	if err := h.heroRepo.UpdateExperience(newExp); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "経験値の更新に失敗しました"})
+	}
 
 	return c.JSON(http.StatusOK, service.ClearStageResponse{
 		Message:          fmt.Sprintf("ステージ「%s」クリア！", stage.Name),
