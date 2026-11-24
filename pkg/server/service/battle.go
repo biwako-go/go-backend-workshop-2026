@@ -28,7 +28,7 @@ type EnemyAttackRequest struct {
 // [Lv1 バグ仕込み箇所]
 // この関数を完成させてください。
 func CalculateDamage(attack int) int {
-	return 0
+	return attack
 }
 
 // CalculateEnemyDamage は敵の攻撃力をもとにダメージを計算する。
