@@ -6,12 +6,7 @@ type MirrorKnight struct {
 }
 
 // TakeDamage は騎士にダメージを与える。
-//
-// [Lv7 バグ仕込み箇所]
-// レシーバが「値レシーバ」なので、メソッドが受け取るのは本体のコピー。
-// コピーのHPを減らしても本体には反映されない（攻撃が鏡に吸われている！）。
-// ポインタレシーバ func (k *MirrorKnight) TakeDamage(...) に変えよう。
-func (k MirrorKnight) TakeDamage(damage int) {
+func (k *MirrorKnight) TakeDamage(damage int) {
 	k.HP -= damage
 }
 
