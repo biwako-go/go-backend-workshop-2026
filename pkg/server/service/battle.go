@@ -108,15 +108,9 @@ func summonSpirit() {
 }
 
 // EnemyAttack は敵の攻撃ダメージを計算して返す。
-//
-// [Lv5 バグ仕込み箇所]
-// ボスドラゴンの攻撃だけなぜか遅い。ハンドラー層も確認しよう。
 func EnemyAttack(req EnemyAttackRequest) AttackResponse {
 	summonSpirit() // 敵の攻撃とともに悪霊が漏れ出す
 	damage := CalculateEnemyDamage(req.EnemyAttack)
-	if req.EnemyName == "ボスドラゴン" {
-		time.Sleep(3 * time.Second)
-	}
 	newHeroHP := ApplyDamage(req.HeroHP, damage)
 	return AttackResponse{
 		Damage:    damage,
