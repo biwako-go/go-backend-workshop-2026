@@ -40,12 +40,6 @@ func (h *BattleHandler) Attack(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストの形式が正しくありません"})
 	}
 	result := service.HeroAttack(req)
-	// [Lv4 バグ仕込み箇所]
-	// デーモン戦ではヒーローの攻撃が反転し、敵を回復させてしまう
-	if req.EnemyName == "デーモン" {
-		result.Damage = -result.Damage
-		result.Message = "攻撃が吸収された！" + result.Message
-	}
 	return c.JSON(http.StatusOK, result)
 }
 
