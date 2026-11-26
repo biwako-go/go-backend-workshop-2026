@@ -838,11 +838,6 @@ func (h *BattleHandler) EnemyAttack(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "リクエストの形式が正しくありません"})
 	}
-	// [Lv5 バグ仕込み箇所]
-	// ボスドラゴンの攻撃だけなぜか遅い。サービス層だけでなくハンドラー層も確認しよう。
-	if req.EnemyName == "ボスドラゴン" {
-		time.Sleep(5 * time.Second)
-	}
 	result := service.EnemyAttack(req)
 	return c.JSON(http.StatusOK, result)
 }
