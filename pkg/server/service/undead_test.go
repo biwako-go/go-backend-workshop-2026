@@ -15,7 +15,9 @@ func TestFinishingBlow(t *testing.T) {
 		damage    int
 		want      int
 	}{
-		// ここにテストケースを追加しよう
+		{name: "ぴったり倒せるケース", currentHP: 100, damage: 100, want: 0},
+		{name: "ダメージを与えられなかったケース", currentHP: 100, damage: 0, want: 100},
+		{name: "ダメージ超過ケース", currentHP: 100, damage: 1000, want: 0},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
