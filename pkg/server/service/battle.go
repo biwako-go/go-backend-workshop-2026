@@ -3,7 +3,6 @@ package service
 import (
 	"fmt"
 	"math/rand"
-	"time"
 )
 
 type AttackRequest struct {
