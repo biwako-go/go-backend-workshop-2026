@@ -8,8 +8,9 @@ package service
 // 文字のド真ん中でちぎれて名前が壊れる（文字化け）。
 // []rune(name) に変換すると「1文字＝1要素」になる。rune で数えて切り詰めよう。
 func EngraveName(name string) string {
-	if len(name) > 5 {
-		return name[:5]
+	runedName := []rune(name)
+	if len(runedName) > 5 {
+		return string(runedName[:5])
 	}
 	return name
 }
