@@ -50,7 +50,7 @@ func (r *StageRepository) GetByID(id int) (*service.Stage, error) {
 	`, id)
 	err := row.Scan(&s.ID, &s.Name, &s.Description, &s.RequiredExperience, &s.OrderNum)
 	if err != nil {
-		return nil, nil // ← エラーを握りつぶしている
+		return nil, err
 	}
 	return s, nil
 }
