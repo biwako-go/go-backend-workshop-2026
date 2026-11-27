@@ -1,5 +1,7 @@
 package service
 
+import "slices"
+
 // FormBattleLine は討伐隊の隊列を組む。
 // 隊列は呼ぶたびに同じ順序でなければならない。
 //
@@ -16,5 +18,6 @@ func FormBattleLine() []string {
 	for name := range members {
 		line = append(line, name)
 	}
+	slices.Sort(line)
 	return line
 }
